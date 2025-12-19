@@ -1,0 +1,167 @@
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser, fetchUserProfile } from "../../Redux/authSlice.js";
+import appLogo from "../../assets/LOGO.png";
+
+export default function NGOSidebar({
+  profile: propProfile,
+  activePage,
+  setActivePage,
+  isOpen,
+  onClose,
+  isMobile,
+}) {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // Get profile data from Redux store
+  const { profile: reduxProfile, isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
+
+  // Fetch profile from backend on mount/refresh if not already loaded
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token && !reduxProfile.email && !reduxProfile.ngoName) {
+      // Fetch profile on mount/refresh - don't wait for isAuthenticated
+      // because on refresh, Redux state might not be initialized yet
+      dispatch(fetchUserProfile()).catch((error) => {
+        console.error("Error fetching profile in NGOSidebar:", error);
+      });
+    }
+  }, [dispatch]);
+
+  // Use Redux profile if available, otherwise fall back to prop
+  const profile =
+    reduxProfile && (reduxProfile.email || reduxProfile.ngoName)
+      ? {
+          ngoName: reduxProfile.ngoName || propProfile?.ngoName || "",
+          photoUrl: reduxProfile.photoUrl || propProfile?.photoUrl || null,
+        }
+      : propProfile || {
+          ngoName: "",
+          photoUrl: null,
+        };
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    navigate("/login", {
+      state: { success: "Logged out successfully!" },
+    });
+  };
+
+  const handleNavClick = (page) => {
+    setActivePage(page);
+    // Close sidebar on mobile after navigation
+    if (isMobile) {
+      onClose();
+    }
+  };
+
+  return (
+    <aside
+      className={`${
+        isMobile
+          ? "fixed top-0 left-0 h-full w-72 z-50 transform transition-transform duration-300 ease-in-out"
+          : "relative w-72"
+      } ${
+        isMobile
+          ? isOpen
+            ? "translate-x-0"
+            : "-translate-x-full"
+          : "translate-x-0"
+      } bg-purple-900 text-white flex flex-col p-6`}
+    >
+      {/* Close Button for Mobile */}
+      {isMobile && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 rounded-md hover:bg-purple-800 text-white cursor-pointer"
+          aria-label="Close sidebar"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      )}
+      <div className="flex items-center gap-3 pb-4 border-b border-purple-700">
+        <div className="w-12 h-12 bg-white/10 rounded-md flex items-center justify-center">
+          <img
+            src={appLogo}
+            alt="AdvoCare Logo"
+            className="w-8 h-8 object-contain"
+          />
+        </div>
+
+        <div>
+          <div className="text-sm opacity-90">AdvoCare</div>
+          <div className="text-xs opacity-80">Legal Aid Platform</div>
+        </div>
+      </div>
+
+      <div className="mt-6 mb-6 flex items-center gap-3">
+        <div className="w-10 h-10 bg-purple-700 rounded-full flex items-center justify-center font-semibold overflow-hidden border-2 border-purple-600">
+          {profile.photoUrl ? (
+            <img
+              src={profile.photoUrl}
+              alt={profile.ngoName || "NGO"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span>
+              {profile.ngoName?.charAt(0) || "N"}
+            </span>
+          )}
+        </div>
+        <div>
+          <div className="font-semibold">
+            {profile.ngoName || "NGO"}
+          </div>
+          <div className="text-xs opacity-80">NGO</div>
+        </div>
+      </div>
+
+      <nav className="flex-1">
+        {[
+          { key: "profile", label: "Profile" },
+          { key: "settings", label: "Settings" },
+          { key: "requested", label: "Requested Cases" },
+          { key: "accepted", label: "Accepted Cases" },
+          { key: "pending", label: "Pending Cases" },
+          { key: "completed", label: "Completed Cases" },
+        ].map((item) => (
+          <button
+            key={item.key}
+            onClick={() => handleNavClick(item.key)}
+            className={`w-full text-left px-3 py-3 rounded-md mb-2 transition-colors cursor-pointer ${
+              activePage === item.key ? "bg-purple-800" : "hover:bg-purple-800/60"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="pt-4 border-t border-purple-700">
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-500 hover:bg-red-600 px-3 py-2 rounded-md text-white cursor-pointer"
+        >
+          Logout
+        </button>
+      </div>
+    </aside>
+  );
+}
+

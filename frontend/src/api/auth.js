@@ -25,13 +25,16 @@ export const updateProfile = (profileData, photoFile = null) => {
   
   // Append all profile fields
   if (profileData.fullName) formData.append("fullName", profileData.fullName);
+  if (profileData.ngoName) formData.append("ngoName", profileData.ngoName);
   if (profileData.aadhaar) formData.append("aadhaar", profileData.aadhaar);
   if (profileData.mobile) formData.append("mobile", profileData.mobile);
+  if (profileData.contact) formData.append("contact", profileData.contact);
   if (profileData.dob) formData.append("dob", profileData.dob);
   if (profileData.state) formData.append("state", profileData.state);
   if (profileData.district) formData.append("district", profileData.district);
   if (profileData.city) formData.append("city", profileData.city);
   if (profileData.address) formData.append("address", profileData.address);
+  if (profileData.pincode) formData.append("pincode", profileData.pincode);
   
   // Append photo file if provided
   if (photoFile) {

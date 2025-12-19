@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchUserProfile } from "../../Redux/authSlice.js";
-import LawyerSidebar from "./LawyerSidebar.jsx";
-import LawyerProfile from "./LawyerProfile.jsx";
-import LawyerSettings from "./LawyerSettings.jsx";
+import NGOSidebar from "./NGOSidebar.jsx";
+import NGOProfile from "./NGOProfile.jsx";
+import NGOSettings from "./NGOSettings.jsx";
 import RequestedCases from "./RequestedCases.jsx";
 import AcceptedCases from "./AcceptedCases.jsx";
 import PendingCases from "./PendingCases.jsx";
 import CompletedCases from "./CompletedCases.jsx";
 
-export default function LawyerDashboard() {
+export default function NGODashboard() {
   const dispatch = useDispatch();
   const { profile: reduxProfile, isAuthenticated } = useSelector((state) => state.auth);
   
@@ -22,9 +22,8 @@ export default function LawyerDashboard() {
     const token = localStorage.getItem("accessToken");
     if (token) {
       // Always fetch profile on mount to ensure data is loaded after refresh
-      // Don't check reduxProfile in dependency to ensure it runs on mount
       dispatch(fetchUserProfile()).catch((error) => {
-        console.error("Error fetching profile in LawyerDashboard:", error);
+        console.error("Error fetching profile in NGODashboard:", error);
       });
     }
   }, [dispatch]);
@@ -32,12 +31,12 @@ export default function LawyerDashboard() {
   // Also fetch when profile is empty but we have a token
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (token && (!reduxProfile.email && !reduxProfile.fullName)) {
+    if (token && (!reduxProfile.email && !reduxProfile.ngoName)) {
       dispatch(fetchUserProfile()).catch((error) => {
-        console.error("Error fetching profile in LawyerDashboard:", error);
+        console.error("Error fetching profile in NGODashboard:", error);
       });
     }
-  }, [dispatch, reduxProfile.email, reduxProfile.fullName]);
+  }, [dispatch, reduxProfile.email, reduxProfile.ngoName]);
 
   // Check if device width is 500px or less
   useEffect(() => {
@@ -73,54 +72,47 @@ export default function LawyerDashboard() {
 
   // Profile state (editable)
   const [profile, setProfile] = useState({
-    shortName: reduxProfile?.shortName || reduxProfile?.fullName || "",
-    fullName: reduxProfile?.fullName || "",
-    role: reduxProfile?.role || "LAWYER",
+    ngoName: reduxProfile?.ngoName || "",
+    ngoType: reduxProfile?.ngoType || "",
+    role: reduxProfile?.role || "NGO",
     email: reduxProfile?.email || "",
-    mobile: reduxProfile?.mobile || "",
-    dob: reduxProfile?.dob || "",
+    contact: reduxProfile?.contact || "",
     state: reduxProfile?.state || "",
     district: reduxProfile?.district || "",
     city: reduxProfile?.city || "",
     address: reduxProfile?.address || "",
+    pincode: reduxProfile?.pincode || "",
     password: "",
-    photo: null,
     photoUrl: reduxProfile?.photoUrl || null,
-    // Lawyer-specific fields
-    aadhaar: reduxProfile?.aadhaar || "",
-    barCouncilId: reduxProfile?.barCouncilId || "",
-    barState: reduxProfile?.barState || "",
-    specialization: reduxProfile?.specialization || "",
-    experienceYears: reduxProfile?.experienceYears || "",
-    aadharProofUrl: reduxProfile?.aadharProofUrl || null,
-    barCertificateUrl: reduxProfile?.barCertificateUrl || null,
+    // NGO-specific fields
+    registrationNumber: reduxProfile?.registrationNumber || "",
+    registrationCertificateUrl: reduxProfile?.registrationCertificateUrl || null,
+    latitude: reduxProfile?.latitude || null,
+    longitude: reduxProfile?.longitude || null,
   });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Update profile from Redux when it changes
   useEffect(() => {
-    if (reduxProfile && (reduxProfile.email || reduxProfile.fullName)) {
+    if (reduxProfile && (reduxProfile.email || reduxProfile.ngoName)) {
       setProfile((prev) => ({
         ...prev,
-        shortName: reduxProfile.shortName || reduxProfile.fullName || prev.shortName,
-        fullName: reduxProfile.fullName || prev.fullName,
+        ngoName: reduxProfile.ngoName || prev.ngoName,
+        ngoType: reduxProfile.ngoType || prev.ngoType,
         role: reduxProfile.role || prev.role,
         email: reduxProfile.email || prev.email,
-        mobile: reduxProfile.mobile || prev.mobile,
-        dob: reduxProfile.dob || prev.dob,
+        contact: reduxProfile.contact || prev.contact,
         state: reduxProfile.state || prev.state,
         district: reduxProfile.district || prev.district,
         city: reduxProfile.city || prev.city,
         address: reduxProfile.address || prev.address,
+        pincode: reduxProfile.pincode || prev.pincode,
         photoUrl: reduxProfile.photoUrl || prev.photoUrl,
-        // Lawyer-specific fields
-        aadhaar: reduxProfile.aadhaar || prev.aadhaar || "",
-        barCouncilId: reduxProfile.barCouncilId || prev.barCouncilId || "",
-        barState: reduxProfile.barState || prev.barState || "",
-        specialization: reduxProfile.specialization || prev.specialization || "",
-        experienceYears: reduxProfile.experienceYears || prev.experienceYears || "",
-        aadharProofUrl: reduxProfile.aadharProofUrl || prev.aadharProofUrl || null,
-        barCertificateUrl: reduxProfile.barCertificateUrl || prev.barCertificateUrl || null,
+        // NGO-specific fields
+        registrationNumber: reduxProfile.registrationNumber || prev.registrationNumber || "",
+        registrationCertificateUrl: reduxProfile.registrationCertificateUrl || prev.registrationCertificateUrl || null,
+        latitude: reduxProfile.latitude || prev.latitude || null,
+        longitude: reduxProfile.longitude || prev.longitude || null,
       }));
     }
   }, [reduxProfile]);
@@ -149,7 +141,7 @@ export default function LawyerDashboard() {
       )}
 
       {/* Sidebar */}
-      <LawyerSidebar
+      <NGOSidebar
         profile={profile}
         activePage={activePage}
         setActivePage={setActivePage}
@@ -199,26 +191,26 @@ export default function LawyerDashboard() {
           </h1>
 
           <div className="flex items-center gap-3">
-            <div className="text-sm opacity-80 hidden sm:block">{profile.shortName || profile.fullName || "Lawyer"}</div>
+            <div className="text-sm opacity-80 hidden sm:block">{profile.ngoName || "NGO"}</div>
             <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-300">
               {profile.photoUrl ? (
                 <img
                   src={profile.photoUrl}
-                  alt={profile.shortName || profile.fullName || "Lawyer"}
+                  alt={profile.ngoName || "NGO"}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-gray-600 font-semibold">
-                  {profile.shortName?.charAt(0) || profile.fullName?.charAt(0) || "L"}
+                  {profile.ngoName?.charAt(0) || "N"}
                 </span>
               )}
             </div>
-                  </div>
-                </div>
+          </div>
+        </div>
 
         <section className="space-y-6">
           {activePage === "profile" && (
-            <LawyerProfile
+            <NGOProfile
               profile={profile}
               setProfile={setProfile}
               isEditingProfile={isEditingProfile}
@@ -226,7 +218,7 @@ export default function LawyerDashboard() {
             />
           )}
           {activePage === "settings" && (
-            <LawyerSettings settings={settings} setSettings={setSettings} />
+            <NGOSettings settings={settings} setSettings={setSettings} />
           )}
           {activePage === "requested" && <RequestedCases />}
           {activePage === "accepted" && <AcceptedCases />}

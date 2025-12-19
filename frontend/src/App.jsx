@@ -10,7 +10,7 @@ import Contact from "./Contact.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import CitizenDashboard from "./components/Dashboard/CitizenDashboard.jsx";
 import LawyerDashboard from "./components/lawyerDashboard/LawyerDashboard.jsx";
-import NGODashboard from "./components/Dashboard/NGODashboard.jsx";
+import NGODashboard from "./components/NGODashboard/NGODashboard.jsx";
 import AdminDashboard from "./components/adminDashbaord/AdminDashboard.jsx";
 import { getProfile } from "./api/auth.js";
 import MapComponent from "./pages/MapComponent.jsx";

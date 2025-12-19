@@ -80,17 +80,21 @@ export const fetchUserProfile = createAsyncThunk(
     try {
       const response = await axiosClient.get("/profile/me");
       
+      // Log response for debugging
+      console.log("Profile API Response:", response.data);
+      
       if (response.data) {
         return response.data;
       } else {
         return rejectWithValue("No profile data received");
       }
     } catch (error) {
+      console.error("Profile fetch error:", error.response?.data || error.message);
       return rejectWithValue(
         error.response?.data?.message ||
-        error.response?.data ||
-        error.message ||
-        "Failed to fetch profile"
+          error.response?.data ||
+          error.message ||
+          "Failed to fetch profile"
       );
     }
   }
@@ -144,6 +148,22 @@ const initialState = {
     address: null,
     photoUrl: null,
     role: null,
+    // Lawyer-specific fields
+    barCouncilId: null,
+    barState: null,
+    specialization: null,
+    experienceYears: null,
+    aadharProofUrl: null,
+    barCertificateUrl: null,
+    // NGO-specific fields
+    ngoName: null,
+    ngoType: null,
+    registrationNumber: null,
+    contact: null,
+    pincode: null,
+    registrationCertificateUrl: null,
+    latitude: null,
+    longitude: null,
   },
   
   // Loading and error states
@@ -194,20 +214,37 @@ const authSlice = createSlice({
         };
         // Store profile data from login response
         if (action.payload.userData) {
+          const userData = action.payload.userData;
           state.profile = {
-            id: action.payload.userData.id || null,
-            fullName: action.payload.userData.fullName || null,
-            shortName: action.payload.userData.shortName || action.payload.userData.fullName || null,
-            aadhaar: action.payload.userData.aadhaar || null,
-            email: action.payload.userData.email || action.payload.email || null,
-            mobile: action.payload.userData.mobile || null,
-            dob: action.payload.userData.dob || null,
-            state: action.payload.userData.state || null,
-            district: action.payload.userData.district || null,
-            city: action.payload.userData.city || null,
-            address: action.payload.userData.address || null,
-            photoUrl: action.payload.userData.photoUrl || null,
-            role: action.payload.userData.role || action.payload.role || null,
+            id: userData.id || null,
+            fullName: userData.fullName || null,
+            shortName: userData.shortName || userData.fullName || null,
+            aadhaar: userData.aadhaar || userData.aadharNum || null,
+            email: userData.email || action.payload.email || null,
+            mobile: userData.mobile || userData.mobileNum || null,
+            dob: userData.dob || userData.dateOfBirth || null,
+            state: userData.state || null,
+            district: userData.district || null,
+            city: userData.city || null,
+            address: userData.address || null,
+            photoUrl: userData.photoUrl || null,
+            role: userData.role || action.payload.role || null,
+            // Lawyer-specific fields
+            barCouncilId: userData.barCouncilId || null,
+            barState: userData.barState || null,
+            specialization: userData.specialization || null,
+            experienceYears: userData.experienceYears || userData.experience || null,
+            aadharProofUrl: userData.aadharProofUrl || null,
+            barCertificateUrl: userData.barCertificateUrl || null,
+            // NGO-specific fields
+            ngoName: userData.ngoName || null,
+            ngoType: userData.ngoType || null,
+            registrationNumber: userData.registrationNumber || null,
+            contact: userData.contact || userData.mobile || userData.mobileNum || null,
+            pincode: userData.pincode || null,
+            registrationCertificateUrl: userData.registrationCertificateUrl || null,
+            latitude: userData.latitude || null,
+            longitude: userData.longitude || null,
           };
         }
         state.error = null;
@@ -233,20 +270,48 @@ const authSlice = createSlice({
       })
       .addCase(fetchUserProfile.fulfilled, (state, action) => {
         state.isLoading = false;
+        const payload = action.payload;
+        
+        // Handle different field names from backend (mobileNum vs mobile, aadharNum vs aadhaar)
+        const mobile = payload.mobile || payload.mobileNum || null;
+        const aadhaar = payload.aadhaar || payload.aadharNum || null;
+        
+        // Generate shortName from fullName if not provided
+        const fullName = payload.fullName || null;
+        const shortName = payload.shortName || (fullName && fullName.includes(" ") 
+          ? fullName.split(" ")[0] + " " + fullName.split(" ")[fullName.split(" ").length - 1]
+          : fullName) || null;
+        
         state.profile = {
-          id: action.payload.id || null,
-          fullName: action.payload.fullName || null,
-          shortName: action.payload.shortName || action.payload.fullName || null,
-          aadhaar: action.payload.aadhaar || null,
-          email: action.payload.email || null,
-          mobile: action.payload.mobile || null,
-          dob: action.payload.dob || null,
-          state: action.payload.state || null,
-          district: action.payload.district || null,
-          city: action.payload.city || null,
-          address: action.payload.address || null,
-          photoUrl: action.payload.photoUrl || null,
-          role: action.payload.role || null,
+          id: payload.id || null,
+          fullName: fullName,
+          shortName: shortName,
+          aadhaar: aadhaar,
+          email: payload.email || null,
+          mobile: mobile,
+          dob: payload.dob || payload.dateOfBirth || null,
+          state: payload.state || null,
+          district: payload.district || null,
+          city: payload.city || null,
+          address: payload.address || null,
+          photoUrl: payload.photoUrl || null,
+          role: payload.role || null,
+          // Lawyer-specific fields
+          barCouncilId: payload.barCouncilId || null,
+          barState: payload.barState || null,
+          specialization: payload.specialization || null,
+          experienceYears: payload.experienceYears || payload.experience || null,
+          aadharProofUrl: payload.aadharProofUrl || null,
+          barCertificateUrl: payload.barCertificateUrl || null,
+          // NGO-specific fields
+          ngoName: payload.ngoName || null,
+          ngoType: payload.ngoType || null,
+          registrationNumber: payload.registrationNumber || null,
+          contact: payload.contact || payload.mobile || payload.mobileNum || null,
+          pincode: payload.pincode || null,
+          registrationCertificateUrl: payload.registrationCertificateUrl || null,
+          latitude: payload.latitude || null,
+          longitude: payload.longitude || null,
         };
         state.error = null;
       })
@@ -284,6 +349,15 @@ const authSlice = createSlice({
           address: null,
           photoUrl: null,
           role: null,
+          // Lawyer-specific fields
+          barCouncilId: null,
+          barState: null,
+          specialization: null,
+          experienceYears: null,
+          aadharProofUrl: null,
+          barCertificateUrl: null,
+          latitude: null,
+          longitude: null,
         };
         state.error = null;
       })
