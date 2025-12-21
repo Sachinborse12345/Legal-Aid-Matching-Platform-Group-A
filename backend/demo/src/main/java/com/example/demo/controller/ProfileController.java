@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -166,10 +168,26 @@ public class ProfileController {
                 profileData.put("experienceYears", lawyer.getExperienceYears());
                 profileData.put("experience", lawyer.getExperienceYears());
                 profileData.put("aadharProofUrl", lawyer.getAadharProofUrl());
+                profileData.put("aadharProofFilename", lawyer.getAadharProofFilename());
                 profileData.put("barCertificateUrl", lawyer.getBarCertificateUrl());
+                profileData.put("barCertificateFilename", lawyer.getBarCertificateFilename());
                 profileData.put("latitude", lawyer.getLatitude());
                 profileData.put("longitude", lawyer.getLongitude());
-                profileData.put("photoUrl", null); // Lawyers don't have profile photos yet
+                // Format createdAt as ISO 8601 string for better JavaScript compatibility
+                if (lawyer.getCreatedAt() != null) {
+                    // Format as ISO 8601: "2025-12-12T18:07:27" (JavaScript can parse this)
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+                    String formattedDate = lawyer.getCreatedAt().format(formatter);
+                    System.out.println("Lawyer createdAt - Raw: " + lawyer.getCreatedAt() + ", Formatted: " + formattedDate);
+                    profileData.put("createdAt", formattedDate);
+                } else {
+                    System.out.println("Lawyer createdAt is NULL");
+                    profileData.put("createdAt", null);
+                }
+                // Get profile photo URL and log it for debugging
+                String profilePhotoUrl = lawyer.getProfilePhotoUrl();
+                System.out.println("Lawyer profilePhotoUrl from database: " + profilePhotoUrl);
+                profileData.put("photoUrl", profilePhotoUrl); // Lawyer profile photo URL
             } else if (normalizedRole.equals("NGO")) {
                 // Find NGO by email
                 NGO ngo = ngoRepository.findByEmail(email);
@@ -194,9 +212,17 @@ public class ProfileController {
                 profileData.put("pincode", ngo.getPincode());
                 profileData.put("role", "NGO");
                 profileData.put("registrationCertificateUrl", ngo.getRegistrationCertificateUrl());
+                profileData.put("registrationCertificateFilename", ngo.getRegistrationCertificateFilename());
                 profileData.put("latitude", ngo.getLatitude());
                 profileData.put("longitude", ngo.getLongitude());
-                profileData.put("photoUrl", null); // NGOs don't have profile photos yet
+                if (ngo.getCreatedAt() != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+                    String formattedDate = ngo.getCreatedAt().format(formatter);
+                    profileData.put("createdAt", formattedDate);
+                } else {
+                    profileData.put("createdAt", null);
+                }
+                profileData.put("photoUrl", ngo.getProfilePhotoUrl()); // NGO profile photo URL
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Unsupported role: " + role);
@@ -225,6 +251,10 @@ public class ProfileController {
             @RequestParam(value = "city", required = false) String city,
             @RequestParam(value = "address", required = false) String address,
             @RequestParam(value = "pincode", required = false) String pincode,
+            @RequestParam(value = "barState", required = false) String barState,
+            @RequestParam(value = "specialization", required = false) String specialization,
+            @RequestParam(value = "latitude", required = false) String latitude,
+            @RequestParam(value = "longitude", required = false) String longitude,
             @RequestParam(value = "profilePhoto", required = false) MultipartFile profilePhoto) {
         try {
             // Get token from Authorization header
@@ -480,13 +510,38 @@ public class ProfileController {
                     lawyer.setAddress(address.trim());
                 }
 
-                // Handle profile photo upload (if supported in future)
+                if (barState != null && !barState.trim().isEmpty()) {
+                    lawyer.setBarState(barState.trim());
+                }
+
+                if (specialization != null && !specialization.trim().isEmpty()) {
+                    lawyer.setSpecialization(specialization.trim());
+                }
+
+                if (latitude != null && !latitude.trim().isEmpty()) {
+                    try {
+                        lawyer.setLatitude(Double.parseDouble(latitude.trim()));
+                    } catch (NumberFormatException e) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body("Invalid latitude value. Must be a number.");
+                    }
+                }
+
+                if (longitude != null && !longitude.trim().isEmpty()) {
+                    try {
+                        lawyer.setLongitude(Double.parseDouble(longitude.trim()));
+                    } catch (NumberFormatException e) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body("Invalid longitude value. Must be a number.");
+                    }
+                }
+
+                // Handle profile photo upload
                 if (profilePhoto != null && !profilePhoto.isEmpty()) {
                     try {
                         // Upload image to Cloudinary
                         String photoUrl = cloudinaryService.uploadImage(profilePhoto, "lawyers/profile-photos");
-                        // Note: Lawyer entity might need a profilePhotoUrl field added
-                        // For now, we'll skip this if the field doesn't exist
+                        lawyer.setProfilePhotoUrl(photoUrl);
                     } catch (IOException e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body("Failed to upload profile photo: " + e.getMessage());
@@ -521,10 +576,20 @@ public class ProfileController {
                 profileData.put("experienceYears", updatedLawyer.getExperienceYears());
                 profileData.put("experience", updatedLawyer.getExperienceYears());
                 profileData.put("aadharProofUrl", updatedLawyer.getAadharProofUrl());
+                profileData.put("aadharProofFilename", updatedLawyer.getAadharProofFilename());
                 profileData.put("barCertificateUrl", updatedLawyer.getBarCertificateUrl());
+                profileData.put("barCertificateFilename", updatedLawyer.getBarCertificateFilename());
                 profileData.put("latitude", updatedLawyer.getLatitude());
                 profileData.put("longitude", updatedLawyer.getLongitude());
-                profileData.put("photoUrl", null);
+                // Format createdAt as ISO 8601 string for better JavaScript compatibility
+                if (updatedLawyer.getCreatedAt() != null) {
+                    // Format as ISO 8601: "2025-12-12T18:07:27" (JavaScript can parse this)
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+                    profileData.put("createdAt", updatedLawyer.getCreatedAt().format(formatter));
+                } else {
+                    profileData.put("createdAt", null);
+                }
+                profileData.put("photoUrl", updatedLawyer.getProfilePhotoUrl()); // Lawyer profile photo URL
             } else if (normalizedRole.equals("NGO")) {
                 // Find NGO by email
                 NGO ngo = ngoRepository.findByEmail(email);
@@ -567,13 +632,12 @@ public class ProfileController {
                     ngo.setPincode(pincode.trim());
                 }
 
-                // Handle profile photo upload (if supported in future)
+                // Handle profile photo upload
                 if (profilePhoto != null && !profilePhoto.isEmpty()) {
                     try {
                         // Upload image to Cloudinary
                         String photoUrl = cloudinaryService.uploadImage(profilePhoto, "ngos/profile-photos");
-                        // Note: NGO entity might need a profilePhotoUrl field added
-                        // For now, we'll skip this if the field doesn't exist
+                        ngo.setProfilePhotoUrl(photoUrl);
                     } catch (IOException e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body("Failed to upload profile photo: " + e.getMessage());
@@ -602,9 +666,10 @@ public class ProfileController {
                 profileData.put("pincode", updatedNGO.getPincode());
                 profileData.put("role", "NGO");
                 profileData.put("registrationCertificateUrl", updatedNGO.getRegistrationCertificateUrl());
+                profileData.put("registrationCertificateFilename", updatedNGO.getRegistrationCertificateFilename());
                 profileData.put("latitude", updatedNGO.getLatitude());
                 profileData.put("longitude", updatedNGO.getLongitude());
-                profileData.put("photoUrl", null);
+                profileData.put("photoUrl", updatedNGO.getProfilePhotoUrl()); // NGO profile photo URL
             } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Unsupported role: " + role);

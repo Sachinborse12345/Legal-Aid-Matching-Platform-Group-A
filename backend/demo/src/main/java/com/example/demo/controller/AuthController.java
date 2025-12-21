@@ -158,13 +158,13 @@ public class AuthController {
                 case "LAWYER":
                     if (user != null) {
                         userData = buildLawyerData((Lawyer) user);
-                        // Lawyers don't have profile photos yet, but can be added later
+                        profilePhotoUrl = ((Lawyer) user).getProfilePhotoUrl();
                     }
                     break;
                 case "NGO":
                     if (user != null) {
                         userData = buildNGOData((NGO) user);
-                        // NGOs don't have profile photos yet, but can be added later
+                        profilePhotoUrl = ((NGO) user).getProfilePhotoUrl(); // Extract photoUrl for top-level response
                     }
                     break;
                 case "ADMIN":
@@ -174,9 +174,9 @@ public class AuthController {
                     break;
             }
             response.put("userData", userData);
-            // Add profilePhotoUrl at top level for easier access (for CITIZEN role)
+            // Add profilePhotoUrl at top level for easier access (for CITIZEN and LAWYER roles)
             // Always include it, even if null, so frontend can check it
-            if (role.toUpperCase().equals("CITIZEN")) {
+            if (role.toUpperCase().equals("CITIZEN") || role.toUpperCase().equals("LAWYER")) {
                 response.put("profilePhotoUrl", profilePhotoUrl);
             }
 
@@ -229,6 +229,7 @@ public class AuthController {
         data.put("latitude", lawyer.getLatitude());
         data.put("longitude", lawyer.getLongitude());
         data.put("createdAt", lawyer.getCreatedAt() != null ? lawyer.getCreatedAt().toString() : null);
+        data.put("profilePhotoUrl", lawyer.getProfilePhotoUrl());
         return data;
     }
 
@@ -244,6 +245,7 @@ public class AuthController {
         data.put("contact", ngo.getContact());
         data.put("email", ngo.getEmail());
         data.put("address", ngo.getAddress());
+        data.put("profilePhotoUrl", ngo.getProfilePhotoUrl());
         data.put("state", ngo.getState());
         data.put("district", ngo.getDistrict());
         data.put("city", ngo.getCity());

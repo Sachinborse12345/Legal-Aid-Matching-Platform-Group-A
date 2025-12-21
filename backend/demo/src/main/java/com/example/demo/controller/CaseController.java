@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.Case;
+import com.example.demo.entity.CaseDocument;
 import com.example.demo.repository.CaseRepository;
+import com.example.demo.repository.CaseDocumentRepository;
 import com.example.demo.service.CloudinaryService;
 import com.example.demo.util.JwtUtil;
 import org.springframework.http.HttpStatus;
@@ -23,13 +25,15 @@ import java.util.Optional;
 public class CaseController {
 
     private final CaseRepository caseRepository;
+    private final CaseDocumentRepository caseDocumentRepository;
     private final JwtUtil jwtUtil;
     private final CloudinaryService cloudinaryService;
 
     private static final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
-    public CaseController(CaseRepository caseRepository, JwtUtil jwtUtil, CloudinaryService cloudinaryService) {
+    public CaseController(CaseRepository caseRepository, CaseDocumentRepository caseDocumentRepository, JwtUtil jwtUtil, CloudinaryService cloudinaryService) {
         this.caseRepository = caseRepository;
+        this.caseDocumentRepository = caseDocumentRepository;
         this.jwtUtil = jwtUtil;
         this.cloudinaryService = cloudinaryService;
     }
@@ -254,7 +258,7 @@ public class CaseController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Case not found");
             }
 
-            List<String> uploadedUrls = new ArrayList<>();
+            List<CaseDocument> savedDocuments = new ArrayList<>();
             List<String> errors = new ArrayList<>();
 
             for (MultipartFile file : documents) {
@@ -264,49 +268,135 @@ public class CaseController {
                     continue;
                 }
 
-                // Validate file type
+                // Validate file type - only PDFs allowed
                 String contentType = file.getContentType();
-                if (contentType == null || (!contentType.equals("application/pdf") 
-                        && !contentType.startsWith("image/"))) {
-                    errors.add(file.getOriginalFilename() + ": Only PDF and image files allowed");
+                if (contentType == null || !contentType.equals("application/pdf")) {
+                    errors.add(file.getOriginalFilename() + ": Only PDF files allowed");
                     continue;
                 }
 
                 try {
-                    String url;
-                    if (contentType.equals("application/pdf")) {
-                        url = cloudinaryService.uploadFile(file, "cases/" + caseId + "/documents");
-                    } else {
-                        url = cloudinaryService.uploadImage(file, "cases/" + caseId + "/documents");
-                    }
-                    uploadedUrls.add(url);
+                    // Upload to Cloudinary
+                    String url = cloudinaryService.uploadFile(file, "cases/" + caseId + "/documents");
+                    
+                    // Create and save CaseDocument entity
+                    CaseDocument document = new CaseDocument();
+                    document.setCaseId(caseId);
+                    document.setDocumentUrl(url);
+                    document.setDocumentFilename(file.getOriginalFilename());
+                    document.setFileSize(file.getSize());
+                    document.setContentType(contentType);
+                    
+                    CaseDocument savedDocument = caseDocumentRepository.save(document);
+                    savedDocuments.add(savedDocument);
                 } catch (Exception e) {
                     errors.add(file.getOriginalFilename() + ": Upload failed - " + e.getMessage());
                 }
             }
 
-            // Update case with document URLs
-            Case caseEntity = existingCase.get();
-            String existingUrls = caseEntity.getDocumentsUrl();
-            String newUrls = String.join(",", uploadedUrls);
-            if (existingUrls != null && !existingUrls.isEmpty()) {
-                caseEntity.setDocumentsUrl(existingUrls + "," + newUrls);
-            } else {
-                caseEntity.setDocumentsUrl(newUrls);
-            }
-            caseRepository.save(caseEntity);
-
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Documents uploaded");
-            response.put("uploadedUrls", uploadedUrls);
+            response.put("message", "Documents uploaded successfully");
+            response.put("uploadedCount", savedDocuments.size());
             response.put("errors", errors);
-            response.put("documentsUrl", caseEntity.getDocumentsUrl());
+            
+            // Return document details
+            List<Map<String, Object>> documentList = new ArrayList<>();
+            for (CaseDocument doc : savedDocuments) {
+                Map<String, Object> docMap = new HashMap<>();
+                docMap.put("id", doc.getId());
+                docMap.put("documentUrl", doc.getDocumentUrl());
+                docMap.put("documentFilename", doc.getDocumentFilename());
+                docMap.put("fileSize", doc.getFileSize());
+                docMap.put("contentType", doc.getContentType());
+                docMap.put("uploadedAt", doc.getUploadedAt());
+                documentList.add(docMap);
+            }
+            response.put("documents", documentList);
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error uploading documents: " + e.getMessage());
+        }
+    }
+
+    // Get all documents for a case
+    @GetMapping("/{caseId}/documents")
+    public ResponseEntity<?> getCaseDocuments(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long caseId) {
+        try {
+            Integer citizenId = extractUserId(authHeader);
+            if (citizenId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+
+            Optional<Case> existingCase = caseRepository.findByIdAndCitizenId(caseId, citizenId);
+            if (existingCase.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Case not found");
+            }
+
+            List<CaseDocument> documents = caseDocumentRepository.findByCaseIdOrderByUploadedAtDesc(caseId);
+            
+            List<Map<String, Object>> documentList = new ArrayList<>();
+            for (CaseDocument doc : documents) {
+                Map<String, Object> docMap = new HashMap<>();
+                docMap.put("id", doc.getId());
+                docMap.put("documentUrl", doc.getDocumentUrl());
+                docMap.put("documentFilename", doc.getDocumentFilename());
+                docMap.put("fileSize", doc.getFileSize());
+                docMap.put("contentType", doc.getContentType());
+                docMap.put("uploadedAt", doc.getUploadedAt());
+                documentList.add(docMap);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("documents", documentList);
+            response.put("count", documents.size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching documents: " + e.getMessage());
+        }
+    }
+
+    // Delete a document
+    @DeleteMapping("/documents/{documentId}")
+    public ResponseEntity<?> deleteDocument(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long documentId) {
+        try {
+            Integer citizenId = extractUserId(authHeader);
+            if (citizenId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+
+            Optional<CaseDocument> documentOpt = caseDocumentRepository.findById(documentId);
+            if (documentOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document not found");
+            }
+
+            CaseDocument document = documentOpt.get();
+            
+            // Verify the case belongs to the citizen
+            Optional<Case> caseOpt = caseRepository.findByIdAndCitizenId(document.getCaseId(), citizenId);
+            if (caseOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You don't have permission to delete this document");
+            }
+
+            caseDocumentRepository.delete(document);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Document deleted successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting document: " + e.getMessage());
         }
     }
 

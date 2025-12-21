@@ -90,6 +90,9 @@ public class Lawyer {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "profile_photo_url", length = 500)
+    private String profilePhotoUrl; // Cloudinary URL
+
     // GETTERS & SETTERS
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -153,4 +156,7 @@ public class Lawyer {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getProfilePhotoUrl() { return profilePhotoUrl; }
+    public void setProfilePhotoUrl(String profilePhotoUrl) { this.profilePhotoUrl = profilePhotoUrl; }
 }
