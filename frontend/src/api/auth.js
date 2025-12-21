@@ -35,6 +35,15 @@ export const updateProfile = (profileData, photoFile = null) => {
   if (profileData.city) formData.append("city", profileData.city);
   if (profileData.address) formData.append("address", profileData.address);
   if (profileData.pincode) formData.append("pincode", profileData.pincode);
+  // Lawyer-specific fields
+  if (profileData.barState) formData.append("barState", profileData.barState);
+  if (profileData.specialization) formData.append("specialization", profileData.specialization);
+  if (profileData.latitude !== undefined && profileData.latitude !== null && profileData.latitude !== "") {
+    formData.append("latitude", profileData.latitude.toString());
+  }
+  if (profileData.longitude !== undefined && profileData.longitude !== null && profileData.longitude !== "") {
+    formData.append("longitude", profileData.longitude.toString());
+  }
   
   // Append photo file if provided
   if (photoFile) {

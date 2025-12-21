@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchUserProfile } from "../../Redux/authSlice.js";
 import LawyerSidebar from "./LawyerSidebar.jsx";
@@ -11,33 +11,29 @@ import CompletedCases from "./CompletedCases.jsx";
 
 export default function LawyerDashboard() {
   const dispatch = useDispatch();
-  const { profile: reduxProfile, isAuthenticated } = useSelector((state) => state.auth);
+  const { profile: reduxProfile, isAuthenticated, isLoading: isFetchingProfile } = useSelector((state) => state.auth);
   
   const [activePage, setActivePage] = useState("profile"); // profile | settings | requested | accepted | pending | completed
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Fetch profile data on mount/refresh
+  // Track if we've already attempted to fetch to prevent duplicate requests
+  const hasFetchedRef = useRef(false);
+
+  // Fetch profile data only once on mount if not already loaded
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (token) {
-      // Always fetch profile on mount to ensure data is loaded after refresh
-      // Don't check reduxProfile in dependency to ensure it runs on mount
+    const hasProfileData = reduxProfile && (reduxProfile.email || reduxProfile.fullName);
+    
+    // Only fetch if we have a token, don't have profile data, not already fetching, and haven't fetched yet
+    if (token && !hasProfileData && !isFetchingProfile && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       dispatch(fetchUserProfile()).catch((error) => {
         console.error("Error fetching profile in LawyerDashboard:", error);
+        hasFetchedRef.current = false; // Reset on error so we can retry
       });
     }
-  }, [dispatch]);
-  
-  // Also fetch when profile is empty but we have a token
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token && (!reduxProfile.email && !reduxProfile.fullName)) {
-      dispatch(fetchUserProfile()).catch((error) => {
-        console.error("Error fetching profile in LawyerDashboard:", error);
-      });
-    }
-  }, [dispatch, reduxProfile.email, reduxProfile.fullName]);
+  }, [dispatch]); // Only run once on mount - don't depend on reduxProfile or isFetchingProfile to avoid loops
 
   // Check if device width is 500px or less
   useEffect(() => {
@@ -125,6 +121,7 @@ export default function LawyerDashboard() {
     }
   }, [reduxProfile]);
 
+
   // Settings
   const [settings, setSettings] = useState({
     notifications: true,
@@ -206,15 +203,21 @@ export default function LawyerDashboard() {
                   src={profile.photoUrl}
                   alt={profile.shortName || profile.fullName || "Lawyer"}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to initial if image fails to load
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
                 />
-              ) : (
+              ) : null}
+              {!profile.photoUrl && (
                 <span className="text-gray-600 font-semibold">
                   {profile.shortName?.charAt(0) || profile.fullName?.charAt(0) || "L"}
                 </span>
               )}
             </div>
-                  </div>
-                </div>
+          </div>
+        </div>
 
         <section className="space-y-6">
           {activePage === "profile" && (

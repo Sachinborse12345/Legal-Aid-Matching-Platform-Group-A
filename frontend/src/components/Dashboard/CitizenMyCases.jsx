@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { getMyCases, updateCaseStatus } from "../../api/caseApi";
-import { FiFileText, FiUser, FiAlertCircle, FiMapPin, FiCalendar, FiEye, FiX, FiClock, FiDownload, FiCheck, FiRefreshCw, FiMessageSquare, FiSearch } from "react-icons/fi";
+import { getMyCases, updateCaseStatus, getCaseDocuments, uploadDocuments, deleteDocument } from "../../api/caseApi";
+import { toast } from "react-toastify";
+import { FiFileText, FiUser, FiAlertCircle, FiMapPin, FiCalendar, FiEye, FiX, FiClock, FiDownload, FiCheck, FiRefreshCw, FiMessageSquare, FiSearch, FiUpload, FiTrash2 } from "react-icons/fi";
 
 export default function CitizenMyCases() {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCase, setSelectedCase] = useState(null);
+  const [caseDocuments, setCaseDocuments] = useState({}); // Store documents by caseId
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState({});
 
   // Download PDF from Cloudinary raw URL
   const downloadPdf = async (url, filename = "document.pdf") => {
@@ -49,6 +53,30 @@ export default function CitizenMyCases() {
     };
     fetchCases();
   }, []);
+
+  // Load documents when a case is selected
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (selectedCase && selectedCase.id) {
+        try {
+          setIsLoadingDocuments(prev => ({ ...prev, [selectedCase.id]: true }));
+          const response = await getCaseDocuments(selectedCase.id);
+          if (response.data && response.data.documents) {
+            setCaseDocuments(prev => ({
+              ...prev,
+              [selectedCase.id]: response.data.documents
+            }));
+          }
+        } catch (error) {
+          console.error("Error loading documents:", error);
+          toast.error("Failed to load documents");
+        } finally {
+          setIsLoadingDocuments(prev => ({ ...prev, [selectedCase.id]: false }));
+        }
+      }
+    };
+    loadDocuments();
+  }, [selectedCase]);
 
   const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
@@ -194,15 +222,30 @@ export default function CitizenMyCases() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {c.documentsUrl && (
-                      <button
-                        onClick={() => downloadPdf(c.documentsUrl.split(",")[0], `case_${c.caseNumber || c.id}_document.pdf`)}
-                        className="p-2 text-[#234f4a] bg-[#234f4a]/10 rounded-lg hover:bg-[#234f4a]/20 active:scale-95 transition-all cursor-pointer"
-                        title="Download Document"
-                      >
-                        <FiDownload className="w-4 h-4" />
-                      </button>
-                    )}
+                    <button
+                      onClick={async () => {
+                        setSelectedCase(c);
+                        // Load documents for this case
+                        try {
+                          setIsLoadingDocuments(prev => ({ ...prev, [c.id]: true }));
+                          const response = await getCaseDocuments(c.id);
+                          if (response.data && response.data.documents) {
+                            setCaseDocuments(prev => ({
+                              ...prev,
+                              [c.id]: response.data.documents
+                            }));
+                          }
+                        } catch (error) {
+                          console.error("Error loading documents:", error);
+                        } finally {
+                          setIsLoadingDocuments(prev => ({ ...prev, [c.id]: false }));
+                        }
+                      }}
+                      className="p-2 text-[#234f4a] bg-[#234f4a]/10 rounded-lg hover:bg-[#234f4a]/20 active:scale-95 transition-all cursor-pointer"
+                      title="View Documents"
+                    >
+                      <FiFileText className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => alert(`Send message for case ${c.caseNumber || c.id}`)}
                       disabled={!c.isSubmitted}
@@ -345,24 +388,174 @@ export default function CitizenMyCases() {
                 </div>
               )}
 
-              {/* Documents */}
-              {selectedCase.documentsUrl && (
-                <div className="mt-6">
-                  <h4 className="font-bold text-[#234f4a] border-b pb-2 mb-3">Documents</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedCase.documentsUrl.split(",").map((url, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => downloadPdf(url.trim(), `case_${selectedCase.caseNumber || selectedCase.id}_document_${idx + 1}.pdf`)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#234f4a] text-white rounded-lg text-sm hover:bg-[#1b3f3b] transition"
+              {/* Documents Section */}
+              <div className="mt-6">
+                <h4 className="font-bold text-[#234f4a] border-b pb-2 mb-3">Documents</h4>
+                
+                {/* Upload New Documents */}
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    Upload New PDF Documents
+                  </label>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Max file size: 2MB per file. PDF format only.
+                  </p>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,application/pdf"
+                    disabled={isUploadingDocuments}
+                    className="w-full border border-gray-300 p-3 rounded-lg mb-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    onChange={async (e) => {
+                      const files = [...e.target.files];
+                      const maxSize = 2 * 1024 * 1024; // 2MB
+                      const validFiles = [];
+                      const errors = [];
+                      
+                      files.forEach(file => {
+                        if (file.type !== "application/pdf") {
+                          errors.push(`${file.name}: Only PDF files are allowed`);
+                        } else if (file.size > maxSize) {
+                          errors.push(`${file.name}: exceeds 2MB limit`);
+                        } else {
+                          validFiles.push(file);
+                        }
+                      });
+                      
+                      if (errors.length > 0) {
+                        toast.error("Some files were rejected: " + errors.join(", "));
+                      }
+
+                      if (validFiles.length > 0) {
+                        try {
+                          setIsUploadingDocuments(true);
+                          const response = await uploadDocuments(selectedCase.id, validFiles);
+                          if (response.data && response.data.documents) {
+                            setCaseDocuments(prev => ({
+                              ...prev,
+                              [selectedCase.id]: [
+                                ...(prev[selectedCase.id] || []),
+                                ...response.data.documents
+                              ]
+                            }));
+                            toast.success(`${response.data.uploadedCount} document(s) uploaded successfully`);
+                          }
+                          e.target.value = "";
+                        } catch (error) {
+                          console.error("Error uploading documents:", error);
+                          toast.error("Failed to upload documents. Please try again.");
+                        } finally {
+                          setIsUploadingDocuments(false);
+                        }
+                      }
+                    }}
+                  />
+                  {isUploadingDocuments && (
+                    <div className="text-center py-2">
+                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-[#234f4a]"></div>
+                      <p className="mt-1 text-sm text-gray-600">Uploading documents...</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Display Documents */}
+                {isLoadingDocuments[selectedCase.id] ? (
+                  <div className="text-center py-4">
+                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#234f4a]"></div>
+                    <p className="mt-2 text-sm text-gray-600">Loading documents...</p>
+                  </div>
+                ) : caseDocuments[selectedCase.id] && caseDocuments[selectedCase.id].length > 0 ? (
+                  <div className="space-y-2">
+                    {caseDocuments[selectedCase.id].map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
                       >
-                        <FiDownload className="w-4 h-4" />
-                        Document {idx + 1}
-                      </button>
+                        <div className="flex items-center gap-3 flex-1">
+                          <svg
+                            className="w-6 h-6 text-red-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">
+                              {doc.documentFilename || "Document"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(doc.fileSize / 1024 / 1024).toFixed(2)} MB • Uploaded{" "}
+                              {new Date(doc.uploadedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={doc.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <FiDownload className="w-3 h-3" />
+                            View
+                          </a>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm("Are you sure you want to delete this document?")) {
+                                try {
+                                  await deleteDocument(doc.id);
+                                  setCaseDocuments(prev => ({
+                                    ...prev,
+                                    [selectedCase.id]: prev[selectedCase.id].filter((d) => d.id !== doc.id)
+                                  }));
+                                  toast.success("Document deleted successfully");
+                                } catch (error) {
+                                  toast.error("Failed to delete document");
+                                }
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <FiTrash2 className="w-3 h-3" />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <FiFileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No documents uploaded yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Upload PDF documents above</p>
+                  </div>
+                )}
+
+                {/* Legacy Documents (if any) - for backward compatibility */}
+                {selectedCase.documentsUrl && (!caseDocuments[selectedCase.id] || caseDocuments[selectedCase.id].length === 0) && (
+                  <div className="mt-4">
+                    <p className="text-xs text-gray-500 mb-2">Legacy Documents:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCase.documentsUrl.split(",").map((url, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => downloadPdf(url.trim(), `case_${selectedCase.caseNumber || selectedCase.id}_document_${idx + 1}.pdf`)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition"
+                        >
+                          <FiDownload className="w-4 h-4" />
+                          Document {idx + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Timestamps */}
               <div className="mt-6 pt-4 border-t flex items-center gap-6 text-sm text-gray-500">

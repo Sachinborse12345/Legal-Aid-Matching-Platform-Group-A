@@ -20,17 +20,7 @@ export default function LawyerSidebar({
     (state) => state.auth
   );
 
-  // Fetch profile from backend on mount/refresh if not already loaded
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token && !reduxProfile.email && !reduxProfile.fullName) {
-      // Fetch profile on mount/refresh - don't wait for isAuthenticated
-      // because on refresh, Redux state might not be initialized yet
-      dispatch(fetchUserProfile()).catch((error) => {
-        console.error("Error fetching profile in LawyerSidebar:", error);
-      });
-    }
-  }, [dispatch]);
+  // Don't fetch here - let LawyerDashboard handle it to avoid duplicate requests
 
   // Use Redux profile if available, otherwise fall back to prop
   const profile =
@@ -49,6 +39,7 @@ export default function LawyerSidebar({
           fullName: "",
           photoUrl: null,
         };
+
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -121,11 +112,16 @@ export default function LawyerSidebar({
           {profile.photoUrl ? (
             <img
               src={profile.photoUrl}
-              alt={profile.shortName || "User"}
+              alt={profile.shortName || profile.fullName || "User"}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to initial if image fails to load
+                e.target.style.display = 'none';
+              }}
             />
-          ) : (
-            <span>
+          ) : null}
+          {!profile.photoUrl && (
+            <span className="text-white">
               {profile.shortName?.charAt(0) ||
                 profile.fullName?.charAt(0) ||
                 "L"}

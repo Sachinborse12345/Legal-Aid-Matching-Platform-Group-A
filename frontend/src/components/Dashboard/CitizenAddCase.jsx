@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { fetchUserProfile } from "../../Redux/authSlice";
 import { 
   fetchDraftCase, 
   saveStepData, 
@@ -10,6 +11,7 @@ import {
   setStep as setStepAction,
   setSaveStatus 
 } from "../../Redux/caseSlice";
+import { uploadDocuments, getCaseDocuments, deleteDocument } from "../../api/caseApi";
 
 /* ---------------- STEPS ---------------- */
 
@@ -30,14 +32,168 @@ const isValidName = (name) => /^[A-Za-z ]+$/.test(name.trim());
 export default function CaseFilingForm() {
   const dispatch = useDispatch();
   const { caseId, step, form, isLoading: loading, saveStatus, error } = useSelector((state) => state.case);
+  const { profile: userProfile, isAuthenticated } = useSelector((state) => state.auth);
 
   const [victimNameError, setVictimNameError] = useState("");
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   const handle = (k, v) => dispatch(updateForm({ [k]: v }));
 
   // Load draft case on mount
   useEffect(() => {
     dispatch(fetchDraftCase());
   }, [dispatch]);
+
+  // Load uploaded documents when caseId is available
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (caseId) {
+        try {
+          setIsLoadingDocuments(true);
+          const response = await getCaseDocuments(caseId);
+          if (response.data && response.data.documents) {
+            setUploadedDocuments(response.data.documents);
+          }
+        } catch (error) {
+          console.error("Error loading documents:", error);
+        } finally {
+          setIsLoadingDocuments(false);
+        }
+      }
+    };
+    loadDocuments();
+  }, [caseId]);
+
+  // Fetch user profile if not already loaded
+  useEffect(() => {
+    if (isAuthenticated && !userProfile.email && !userProfile.fullName) {
+      dispatch(fetchUserProfile());
+    }
+  }, [dispatch, isAuthenticated, userProfile.email, userProfile.fullName]);
+
+  // Function to calculate age from date of birth
+  const calculateAge = (dob) => {
+    if (!dob) return null;
+    
+    try {
+      // Handle different date formats
+      let birthDate;
+      if (typeof dob === 'string') {
+        // If it's a date string, parse it
+        if (dob.includes('T')) {
+          birthDate = new Date(dob.split('T')[0]);
+        } else {
+          birthDate = new Date(dob);
+        }
+      } else if (dob instanceof Date) {
+        birthDate = dob;
+      } else {
+        return null;
+      }
+      
+      // Check if date is valid
+      if (isNaN(birthDate.getTime())) {
+        return null;
+      }
+      
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      // Adjust age if birthday hasn't occurred this year
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      return age > 0 ? age.toString() : null;
+    } catch (error) {
+      console.error("Error calculating age:", error);
+      return null;
+    }
+  };
+
+  // Function to auto-fill form with user data
+  const handleFillMyCase = async () => {
+    try {
+      setIsLoadingProfile(true);
+      
+      // Fetch latest profile data if not available
+      let profileData = userProfile;
+      if (!userProfile.email && !userProfile.fullName) {
+        // Fetch profile and unwrap to get the payload
+        const payload = await dispatch(fetchUserProfile()).unwrap();
+        // Map the payload to profile format
+        profileData = {
+          fullName: payload.fullName || null,
+          email: payload.email || null,
+          mobile: payload.mobile || payload.mobileNum || null,
+          aadhaar: payload.aadhaar || payload.aadharNum || null,
+          dob: payload.dob || payload.dateOfBirth || null,
+        };
+      } else {
+        // Use existing profile data
+        profileData = {
+          fullName: userProfile.fullName || null,
+          email: userProfile.email || null,
+          mobile: userProfile.mobile || null,
+          aadhaar: userProfile.aadhaar || null,
+          dob: userProfile.dob || null,
+        };
+      }
+      
+      // Auto-fill form fields with user data
+      const updates = {};
+      
+      // Applicant details
+      if (profileData.fullName) {
+        updates.applicantName = profileData.fullName;
+      }
+      
+      if (profileData.email) {
+        updates.email = profileData.email;
+      }
+      
+      if (profileData.mobile) {
+        updates.mobile = profileData.mobile;
+      }
+      
+      if (profileData.aadhaar) {
+        updates.aadhaar = profileData.aadhaar;
+      }
+      
+      // Victim details (when victim is self)
+      if (profileData.fullName) {
+        updates.victimName = profileData.fullName;
+      }
+      
+      // Set relation to "Self"
+      updates.relation = "Self";
+      
+      // Calculate age from date of birth
+      if (profileData.dob) {
+        const age = calculateAge(profileData.dob);
+        if (age) {
+          updates.victimAge = age;
+        }
+      }
+      
+      // Update form with user data
+      if (Object.keys(updates).length > 0) {
+        // Use updateForm to update all fields at once
+        dispatch(updateForm(updates));
+        toast.success("Form filled with your profile data!");
+      } else {
+        toast.info("No profile data available. Please update your profile first.");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile data. Please try again.");
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   // Clear save status after 2 seconds
   useEffect(() => {
@@ -177,12 +333,42 @@ export default function CaseFilingForm() {
       return;
     }
 
-    const result = await dispatch(submitCaseData({ caseId, documents: form.documents }));
+    // Check if there are any documents uploaded
+    if (uploadedDocuments.length === 0) {
+      const hasPendingFiles = form.documents && form.documents.length > 0;
+      if (!hasPendingFiles) {
+        const proceed = window.confirm("No documents uploaded. Do you want to submit the case without documents?");
+        if (!proceed) {
+          return;
+        }
+      } else {
+        // Upload any pending documents before submitting
+        if (caseId) {
+          try {
+            setIsUploadingDocuments(true);
+            const response = await uploadDocuments(caseId, form.documents);
+            if (response.data && response.data.documents) {
+              setUploadedDocuments([...uploadedDocuments, ...response.data.documents]);
+              toast.success(`${response.data.uploadedCount} document(s) uploaded successfully`);
+            }
+            // Clear form documents after upload
+            handle("documents", []);
+          } catch (error) {
+            console.error("Error uploading documents:", error);
+            toast.error("Failed to upload documents. Please try again.");
+            setIsUploadingDocuments(false);
+            return;
+          } finally {
+            setIsUploadingDocuments(false);
+          }
+        }
+      }
+    }
+
+    // Submit the case (documents are already in case_documents table)
+    const result = await dispatch(submitCaseData({ caseId }));
     
     if (submitCaseData.fulfilled.match(result)) {
-      if (result.payload.uploadErrors && result.payload.uploadErrors.length > 0) {
-        toast.warn("Some files failed to upload: " + result.payload.uploadErrors.join(", "));
-      }
       toast.success("Case submitted successfully!");
     }
   };
@@ -204,6 +390,38 @@ export default function CaseFilingForm() {
             </p>
           </div>
           
+          {/* My Case Button */}
+          <div className="flex-shrink-0">
+            <button
+              onClick={handleFillMyCase}
+              disabled={isLoadingProfile || !isAuthenticated}
+              className="bg-white hover:bg-gray-100 disabled:bg-gray-300 disabled:cursor-not-allowed text-[#2f4f4f] font-semibold px-6 py-3 rounded-lg shadow-md transition-all duration-200 flex items-center gap-2"
+            >
+              {isLoadingProfile ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-[#2f4f4f] border-t-transparent rounded-full animate-spin"></div>
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  <span>My Case</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
         {saveStatus && (
           <p className="mt-4 text-white text-sm">{saveStatus}</p>
@@ -519,45 +737,157 @@ export default function CaseFilingForm() {
                 Reports • Court Orders (If any) - PDF format only
               </p>
               <p className="mb-4 text-sm text-gray-500">
-                Max file size: <strong>2MB</strong> per file. Allowed: PDF only
+                Max file size: <strong>2MB</strong> per file. Allowed: PDF only. You can upload multiple PDFs.
               </p>
 
-              <input
-                type="file"
-                multiple
-                accept=".pdf,application/pdf"
-                className="w-full border border-dashed p-6 rounded-lg mb-2"
-                onChange={(e) => {
-                  const files = [...e.target.files];
-                  const maxSize = 2 * 1024 * 1024; // 2MB
-                  const validFiles = [];
-                  const errors = [];
-                  
-                  files.forEach(file => {
-                    if (file.type !== "application/pdf") {
-                      errors.push(`${file.name}: Only PDF files are allowed`);
-                    } else if (file.size > maxSize) {
-                      errors.push(`${file.name}: exceeds 2MB limit`);
-                    } else {
-                      validFiles.push(file);
+              {/* Uploaded Documents from Database */}
+              {isLoadingDocuments ? (
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg text-center">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#234f4a]"></div>
+                  <p className="mt-2 text-sm text-gray-600">Loading documents...</p>
+                </div>
+              ) : uploadedDocuments.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Uploaded Documents</h3>
+                  <div className="space-y-2">
+                    {uploadedDocuments.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <svg
+                            className="w-6 h-6 text-red-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">
+                              {doc.documentFilename || "Document"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(doc.fileSize / 1024 / 1024).toFixed(2)} MB • Uploaded{" "}
+                              {new Date(doc.uploadedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={doc.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            View
+                          </a>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm("Are you sure you want to delete this document?")) {
+                                try {
+                                  await deleteDocument(doc.id);
+                                  setUploadedDocuments(uploadedDocuments.filter((d) => d.id !== doc.id));
+                                  toast.success("Document deleted successfully");
+                                } catch (error) {
+                                  toast.error("Failed to delete document");
+                                }
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* File Upload Input */}
+              <div className="mb-4">
+                <label className="block mb-2 text-sm font-semibold text-gray-700">
+                  Upload New Documents
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,application/pdf"
+                  disabled={isUploadingDocuments || !caseId}
+                  className="w-full border-2 border-dashed border-gray-300 hover:border-[#234f4a] p-6 rounded-lg mb-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onChange={async (e) => {
+                    if (!caseId) {
+                      toast.error("Please save the case first before uploading documents");
+                      return;
                     }
-                  });
-                  
-                  if (errors.length > 0) {
-                    toast.error("Some files were rejected: " + errors.join(", "));
-                  }
-                  handle("documents", validFiles);
-                }}
-              />
-              
-              {form.documents.length > 0 && (
-                <div className="mb-4 text-sm text-gray-600">
-                  <p className="font-medium">Selected files:</p>
-                  <ul className="list-disc pl-5">
+
+                    const files = [...e.target.files];
+                    const maxSize = 2 * 1024 * 1024; // 2MB
+                    const validFiles = [];
+                    const errors = [];
+                    
+                    files.forEach(file => {
+                      if (file.type !== "application/pdf") {
+                        errors.push(`${file.name}: Only PDF files are allowed`);
+                      } else if (file.size > maxSize) {
+                        errors.push(`${file.name}: exceeds 2MB limit`);
+                      } else {
+                        validFiles.push(file);
+                      }
+                    });
+                    
+                    if (errors.length > 0) {
+                      toast.error("Some files were rejected: " + errors.join(", "));
+                    }
+
+                    if (validFiles.length > 0) {
+                      try {
+                        setIsUploadingDocuments(true);
+                        const response = await uploadDocuments(caseId, validFiles);
+                        if (response.data && response.data.documents) {
+                          setUploadedDocuments([...uploadedDocuments, ...response.data.documents]);
+                          toast.success(`${response.data.uploadedCount} document(s) uploaded successfully`);
+                        }
+                        // Clear the input
+                        e.target.value = "";
+                      } catch (error) {
+                        console.error("Error uploading documents:", error);
+                        toast.error("Failed to upload documents. Please try again.");
+                      } finally {
+                        setIsUploadingDocuments(false);
+                      }
+                    }
+                  }}
+                />
+                {isUploadingDocuments && (
+                  <div className="text-center py-2">
+                    <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-[#234f4a]"></div>
+                    <p className="mt-1 text-sm text-gray-600">Uploading documents...</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pending Files (if any) */}
+              {form.documents && form.documents.length > 0 && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm font-medium text-yellow-800 mb-2">Files ready to upload:</p>
+                  <ul className="list-disc pl-5 text-sm text-yellow-700">
                     {form.documents.map((file, idx) => (
-                      <li key={idx}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
+                      <li key={idx}>
+                        {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </li>
                     ))}
                   </ul>
+                  <p className="text-xs text-yellow-600 mt-2">
+                    These files will be uploaded when you save this step.
+                  </p>
                 </div>
               )}
             </div>

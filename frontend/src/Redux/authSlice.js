@@ -47,16 +47,25 @@ export const loginUser = createAsyncThunk(
             shortName: userData.fullName ? (userData.fullName.includes(" ") 
               ? userData.fullName.split(" ")[0] + " " + userData.fullName.split(" ")[userData.fullName.split(" ").length - 1]
               : userData.fullName) : null,
-            aadhaar: userData.aadharNum || null,
+            aadhaar: userData.aadharNum || userData.aadhaar || null,
             email: userData.email || response.data.email || null,
-            mobile: userData.mobileNum || null,
-            dob: userData.dateOfBirth || null,
+            mobile: userData.mobileNum || userData.mobile || null,
+            dob: userData.dateOfBirth || userData.dob || null,
             state: userData.state || null,
             district: userData.district || null,
             city: userData.city || null,
             address: userData.address || null,
-            photoUrl: profilePhotoUrl, // Use extracted profilePhotoUrl
+            photoUrl: profilePhotoUrl || userData.profilePhotoUrl || null, // Use extracted profilePhotoUrl
             role: response.data.role || credentials.role,
+            // Lawyer-specific fields
+            barCouncilId: userData.barCouncilId || null,
+            barState: userData.barState || null,
+            specialization: userData.specialization || null,
+            experienceYears: userData.experienceYears || userData.experience || null,
+            aadharProofUrl: userData.aadharProofUrl || null,
+            barCertificateUrl: userData.barCertificateUrl || null,
+            latitude: userData.latitude || null,
+            longitude: userData.longitude || null,
           },
         };
       } else {
@@ -159,6 +168,12 @@ const initialState = {
     ngoName: null,
     ngoType: null,
     registrationNumber: null,
+    registrationCertificateUrl: null,
+    registrationCertificateFilename: null,
+    latitude: null,
+    longitude: null,
+    createdAt: null,
+    registrationNumber: null,
     contact: null,
     pincode: null,
     registrationCertificateUrl: null,
@@ -236,15 +251,25 @@ const authSlice = createSlice({
             experienceYears: userData.experienceYears || userData.experience || null,
             aadharProofUrl: userData.aadharProofUrl || null,
             barCertificateUrl: userData.barCertificateUrl || null,
+            latitude: userData.latitude || null,
+            longitude: userData.longitude || null,
             // NGO-specific fields
             ngoName: userData.ngoName || null,
             ngoType: userData.ngoType || null,
             registrationNumber: userData.registrationNumber || null,
+            registrationCertificateUrl: userData.registrationCertificateUrl || null,
+            registrationCertificateFilename: userData.registrationCertificateFilename || null,
+            latitude: userData.latitude || null,
+            longitude: userData.longitude || null,
+            createdAt: userData.createdAt || null,
+            registrationNumber: userData.registrationNumber || null,
             contact: userData.contact || userData.mobile || userData.mobileNum || null,
             pincode: userData.pincode || null,
             registrationCertificateUrl: userData.registrationCertificateUrl || null,
+            registrationCertificateFilename: userData.registrationCertificateFilename || null,
             latitude: userData.latitude || null,
             longitude: userData.longitude || null,
+            createdAt: userData.createdAt || null,
           };
         }
         state.error = null;
@@ -302,16 +327,26 @@ const authSlice = createSlice({
           specialization: payload.specialization || null,
           experienceYears: payload.experienceYears || payload.experience || null,
           aadharProofUrl: payload.aadharProofUrl || null,
+          aadharProofFilename: payload.aadharProofFilename || null,
           barCertificateUrl: payload.barCertificateUrl || null,
+          barCertificateFilename: payload.barCertificateFilename || null,
           // NGO-specific fields
           ngoName: payload.ngoName || null,
           ngoType: payload.ngoType || null,
           registrationNumber: payload.registrationNumber || null,
+          registrationCertificateUrl: payload.registrationCertificateUrl || null,
+          registrationCertificateFilename: payload.registrationCertificateFilename || null,
+          latitude: payload.latitude || null,
+          longitude: payload.longitude || null,
+          createdAt: payload.createdAt || null,
+          registrationNumber: payload.registrationNumber || null,
           contact: payload.contact || payload.mobile || payload.mobileNum || null,
           pincode: payload.pincode || null,
           registrationCertificateUrl: payload.registrationCertificateUrl || null,
+          registrationCertificateFilename: payload.registrationCertificateFilename || null,
           latitude: payload.latitude || null,
           longitude: payload.longitude || null,
+          createdAt: payload.createdAt || null,
         };
         state.error = null;
       })
@@ -355,9 +390,20 @@ const authSlice = createSlice({
           specialization: null,
           experienceYears: null,
           aadharProofUrl: null,
+          aadharProofFilename: null,
           barCertificateUrl: null,
+          barCertificateFilename: null,
           latitude: null,
           longitude: null,
+          createdAt: null,
+          // NGO-specific fields
+          ngoName: null,
+          ngoType: null,
+          registrationNumber: null,
+          contact: null,
+          pincode: null,
+          registrationCertificateUrl: null,
+          registrationCertificateFilename: null,
         };
         state.error = null;
       })

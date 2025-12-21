@@ -8,6 +8,7 @@ import {
   STATES_OBJECT,
   STATE_WISE_CITIES,
 } from "indian-states-cities-list";
+import { API_BASE } from "../../api/axiosClient.js";
 
 export default function LawyerProfile({
   profile,
@@ -27,6 +28,12 @@ export default function LawyerProfile({
   // State to track validation errors
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  // State management for location fetching
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodingError, setGeocodingError] = useState("");
   
   // Get auth state from Redux
   const { profile: reduxProfile, isLoading: isFetchingProfile, isAuthenticated } = useSelector((state) => state.auth);
@@ -81,43 +88,21 @@ export default function LawyerProfile({
     }));
   }, [selectedState, selectedStateObj]);
 
-  // Fetch profile data from backend on mount/refresh
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      return;
-    }
+  // Specialization options matching the registration form
+  const specializationOptions = [
+    { label: "Criminal Law", value: "CR" },
+    { label: "Civil Law", value: "CV" },
+    { label: "Corporate Law", value: "CO" },
+    { label: "Family Law", value: "FA" },
+    { label: "Property Law", value: "PR" },
+  ];
 
-    // Always fetch profile on mount to ensure data is loaded after refresh
-    // This ensures data is fetched even after page refresh when Redux state is empty
-    dispatch(fetchUserProfile()).catch((error) => {
-      console.error("Error fetching profile:", error);
-      // Only show error if it's a real error, not just empty profile
-      if (error?.response?.status === 403) {
-        toast.error("Profile endpoint not available for your role. Please contact support.");
-      } else if (error?.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-      }
-      // Don't show generic error on initial load - might be normal
-    });
-  }, [dispatch]);
-  
-  // Also fetch when profile is empty but we have a token (fallback)
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token && (!reduxProfile.email && !reduxProfile.fullName)) {
-      dispatch(fetchUserProfile()).catch((error) => {
-        console.error("Error fetching profile (fallback):", error);
-      });
-    }
-  }, [dispatch, reduxProfile.email, reduxProfile.fullName]);
+  // Don't fetch profile here - LawyerDashboard handles it to avoid duplicate requests
+  // This component just uses the Redux profile data
 
   // Update local profile when Redux profile changes
   useEffect(() => {
     if (reduxProfile && (reduxProfile.email || reduxProfile.fullName)) {
-      // Log for debugging
-      console.log("Redux Profile Data:", reduxProfile);
-      
       // Format date if it exists (handle both date string and date object)
       let formattedDob = "";
       if (reduxProfile.dob) {
@@ -152,7 +137,11 @@ export default function LawyerProfile({
         specialization: reduxProfile.specialization || "",
         experienceYears: reduxProfile.experienceYears || reduxProfile.experience || "",
         aadharProofUrl: reduxProfile.aadharProofUrl || null,
+        aadharProofFilename: reduxProfile.aadharProofFilename || null,
         barCertificateUrl: reduxProfile.barCertificateUrl || null,
+        barCertificateFilename: reduxProfile.barCertificateFilename || null,
+        latitude: reduxProfile.latitude || null,
+        longitude: reduxProfile.longitude || null,
       });
       
       if (reduxProfile.state) {
@@ -285,6 +274,78 @@ export default function LawyerProfile({
     }, 0);
   };
 
+  // Validation functions for latitude and longitude
+  const isLatitudeValid = (lat) => {
+    if (!lat || lat === "") return false;
+    const num = typeof lat === 'string' ? parseFloat(lat) : lat;
+    if (isNaN(num)) return false;
+    return num >= -90 && num <= 90;
+  };
+
+  const isLongitudeValid = (lng) => {
+    if (!lng || lng === "") return false;
+    const num = typeof lng === 'string' ? parseFloat(lng) : lng;
+    if (isNaN(num)) return false;
+    return num >= -180 && num <= 180;
+  };
+
+  // Get current location from browser with retry mechanism
+  const handleGetCurrentLocation = (retryCount = 0) => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsGettingLocation(true);
+    setLocationError("");
+
+    const options = {
+      enableHighAccuracy: retryCount === 0,
+      timeout: retryCount === 0 ? 20000 : 30000,
+      maximumAge: retryCount === 0 ? 0 : 60000,
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const latStr = lat.toFixed(6);
+        const lngStr = lng.toFixed(6);
+        handleProfileChange("latitude", latStr);
+        handleProfileChange("longitude", lngStr);
+        setIsGettingLocation(false);
+        setLocationError("");
+        toast.success("Location fetched successfully!");
+      },
+      (error) => {
+        setIsGettingLocation(false);
+
+        if (error.code === error.TIMEOUT && retryCount === 0) {
+          setTimeout(() => {
+            handleGetCurrentLocation(1);
+          }, 500);
+          return;
+        }
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError("Location access denied. Please enable location permissions in your browser settings.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError("Location information unavailable. Please enter coordinates manually.");
+            break;
+          case error.TIMEOUT:
+            setLocationError("Location request timed out. Please check your GPS/WiFi connection.");
+            break;
+          default:
+            setLocationError("Unable to get location. Please enter coordinates manually.");
+            break;
+        }
+      },
+      options
+    );
+  };
+
   const handlePhotoChange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -312,6 +373,42 @@ export default function LawyerProfile({
     setErrors((prev) => ({ ...prev, photo: "" }));
   };
 
+  const handleDownloadDocument = async (url, filename) => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch the file from Cloudinary
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch document');
+      }
+      
+      // Get the file as a blob
+      const blob = await response.blob();
+      
+      // Create a blob URL with the correct MIME type for PDF
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      
+      // Create a temporary download link
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename || 'document.pdf';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      
+      toast.success('Document downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast.error('Failed to download document. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleUpdateProfile = async () => {
     try {
       setIsLoading(true);
@@ -330,6 +427,10 @@ export default function LawyerProfile({
         district: profile.district?.trim() || "",
         city: profile.city?.trim() || "",
         address: profile.address?.trim() || "",
+        barState: profile.barState?.trim() || "",
+        specialization: profile.specialization?.trim() || "",
+        latitude: profile.latitude !== null && profile.latitude !== undefined ? profile.latitude : "",
+        longitude: profile.longitude !== null && profile.longitude !== undefined ? profile.longitude : "",
       };
       
       // Remove empty fields to avoid sending empty strings
@@ -362,21 +463,29 @@ export default function LawyerProfile({
           // Preserve lawyer-specific read-only fields
           aadhaar: profile.aadhaar || "", // Preserve Aadhaar (read-only)
           barCouncilId: profile.barCouncilId || "", // Preserve Bar Council ID (read-only)
-          barState: profile.barState || "", // Preserve Bar State (read-only)
-          specialization: profile.specialization || "", // Preserve Specialization (read-only)
+          barState: updatedData.barState || profile.barState || "",
+          specialization: updatedData.specialization || profile.specialization || "",
           experienceYears: profile.experienceYears || "", // Preserve Experience (read-only)
           aadharProofUrl: profile.aadharProofUrl || null,
+          aadharProofFilename: profile.aadharProofFilename || null,
           barCertificateUrl: profile.barCertificateUrl || null,
+          barCertificateFilename: profile.barCertificateFilename || null,
+          latitude: updatedData.latitude !== undefined ? updatedData.latitude : profile.latitude,
+          longitude: updatedData.longitude !== undefined ? updatedData.longitude : profile.longitude,
         });
 
-        // Refresh profile from backend to get latest data
-        dispatch(fetchUserProfile());
+        // Refresh profile from backend to get latest data (only once, and only if not already fetching)
+        if (!isFetchingProfile) {
+          dispatch(fetchUserProfile());
+        }
         
         toast.success(response.data.message || "Profile updated successfully");
         setIsEditingProfile(false);
       } else {
         // Refresh profile from backend even if response format is different
-        dispatch(fetchUserProfile());
+        if (!isFetchingProfile) {
+          dispatch(fetchUserProfile());
+        }
         toast.success("Profile updated successfully");
         setIsEditingProfile(false);
       }
@@ -524,7 +633,11 @@ export default function LawyerProfile({
                       specialization: reduxProfile.specialization || "",
                       experienceYears: reduxProfile.experienceYears || reduxProfile.experience || "",
                       aadharProofUrl: reduxProfile.aadharProofUrl || null,
+                      aadharProofFilename: reduxProfile.aadharProofFilename || null,
                       barCertificateUrl: reduxProfile.barCertificateUrl || null,
+                      barCertificateFilename: reduxProfile.barCertificateFilename || null,
+                      latitude: reduxProfile.latitude || null,
+                      longitude: reduxProfile.longitude || null,
                     });
                   }
                   setErrors({});
@@ -730,28 +843,51 @@ export default function LawyerProfile({
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Bar State <span className="text-gray-400">(Read-only)</span>
+                  Bar State
                 </label>
                 <input
                   type="text"
                   value={profile.barState || ""}
-                  disabled={true}
-                  className="w-full p-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                  onChange={(e) => handleProfileChange("barState", e.target.value)}
+                  disabled={!isEditingProfile}
+                  className={`w-full p-3 border-2 rounded-lg transition-all duration-200 ${
+                    isEditingProfile
+                      ? "border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 bg-white text-gray-900"
+                      : "border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed"
+                  }`}
                   placeholder="Bar State"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Specialization <span className="text-gray-400">(Read-only)</span>
+                  Specialization
                 </label>
-                <input
-                  type="text"
-                  value={profile.specialization || ""}
-                  disabled={true}
-                  className="w-full p-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                  placeholder="Legal Specialization"
-                />
+                {isEditingProfile ? (
+                  <select
+                    value={profile.specialization || ""}
+                    onChange={(e) => handleProfileChange("specialization", e.target.value)}
+                    className="w-full p-3 border-2 border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 rounded-lg transition-all duration-200 bg-white text-gray-900"
+                  >
+                    <option value="">Select Specialization</option>
+                    {specializationOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={
+                      specializationOptions.find((opt) => opt.value === profile.specialization)?.label ||
+                      profile.specialization ||
+                      ""
+                    }
+                    disabled={true}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                  />
+                )}
               </div>
 
               <div>
@@ -766,6 +902,197 @@ export default function LawyerProfile({
                   placeholder="Years of experience"
                 />
               </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Aadhar Proof Document <span className="text-gray-400">(Read-only)</span>
+                </label>
+                {profile.aadharProofUrl ? (
+                  <button
+                    onClick={() => handleDownloadDocument(profile.aadharProofUrl, profile.aadharProofFilename || 'aadhar-proof.pdf')}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download Aadhar Proof PDF</span>
+                  </button>
+                ) : (
+                  <input
+                    type="text"
+                    value="No document uploaded"
+                    disabled={true}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed"
+                  />
+                )}
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Bar Certificate Document <span className="text-gray-400">(Read-only)</span>
+                </label>
+                {profile.barCertificateUrl ? (
+                  <button
+                    onClick={() => handleDownloadDocument(profile.barCertificateUrl, profile.barCertificateFilename || 'bar-certificate.pdf')}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download Bar Certificate PDF</span>
+                  </button>
+                ) : (
+                  <input
+                    type="text"
+                    value="No document uploaded"
+                    disabled={true}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Latitude
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={profile.latitude || ""}
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                    handleProfileChange("latitude", isNaN(value) ? "" : value);
+                    setLocationError("");
+                  }}
+                  disabled={!isEditingProfile}
+                  className={`w-full p-3 border-2 rounded-lg transition-all duration-200 ${
+                    isEditingProfile
+                      ? "border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 bg-white text-gray-900"
+                      : "border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed"
+                  }`}
+                  placeholder="Geographic latitude (e.g., 19.0760)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Longitude
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={profile.longitude || ""}
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                    handleProfileChange("longitude", isNaN(value) ? "" : value);
+                    setLocationError("");
+                  }}
+                  disabled={!isEditingProfile}
+                  className={`w-full p-3 border-2 rounded-lg transition-all duration-200 ${
+                    isEditingProfile
+                      ? "border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 bg-white text-gray-900"
+                      : "border-gray-200 bg-gray-50 text-gray-600 cursor-not-allowed"
+                  }`}
+                  placeholder="Geographic longitude (e.g., 72.8777)"
+                />
+              </div>
+
+              {/* Location Fetching Button */}
+              {isEditingProfile && (
+                <div className="sm:col-span-2">
+                  <div className="flex flex-wrap gap-3 mb-2">
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      disabled={isGettingLocation}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                      {isGettingLocation ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Getting Location...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>Get Current Location</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Error Messages */}
+                  {locationError && (
+                    <div className="mb-2 p-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                      {locationError}
+                    </div>
+                  )}
+                  {!locationError && !isGettingLocation && (
+                    <div className="mb-2 p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded">
+                      💡 Tip: Use "Get Current Location" to use your device's GPS to fetch your coordinates.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Google Maps Preview */}
+              {profile.latitude &&
+                profile.longitude &&
+                isLatitudeValid(profile.latitude) &&
+                isLongitudeValid(profile.longitude) && (
+                  <div className="sm:col-span-2 mt-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-semibold text-gray-700">
+                        Location Preview
+                      </label>
+                      <a
+                        href={`https://www.google.com/maps?q=${profile.latitude},${profile.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      >
+                        <span>Open in Google Maps</span>
+                        <svg
+                          className="h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                      </a>
+                    </div>
+                    <div className="w-full h-64 border border-gray-300 rounded-md overflow-hidden bg-gray-100">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer-when-downgrade"
+                        src={`https://www.google.com/maps?q=${profile.latitude},${profile.longitude}&output=embed&z=15`}
+                        title="Location Preview"
+                      ></iframe>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Coordinates: {profile.latitude}, {profile.longitude}
+                    </p>
+                  </div>
+                )}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">

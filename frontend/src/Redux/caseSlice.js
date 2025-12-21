@@ -28,19 +28,12 @@ export const saveStepData = createAsyncThunk(
 
 export const submitCaseData = createAsyncThunk(
   "case/submit",
-  async ({ caseId, documents }, { rejectWithValue }) => {
+  async ({ caseId }, { rejectWithValue }) => {
     try {
-      // Upload documents first if any
-      let uploadErrors = [];
-      if (documents && documents.length > 0 && caseId) {
-        const uploadRes = await uploadDocumentsApi(caseId, documents);
-        if (uploadRes.data.errors && uploadRes.data.errors.length > 0) {
-          uploadErrors = uploadRes.data.errors;
-        }
-      }
-      
+      // Documents are already uploaded to case_documents table during step 6
+      // No need to upload again here
       const res = await submitCaseApi(caseId);
-      return { ...res.data, uploadErrors };
+      return res.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Failed to submit case");
     }

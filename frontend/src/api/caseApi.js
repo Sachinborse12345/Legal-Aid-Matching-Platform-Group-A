@@ -44,6 +44,16 @@ export const uploadDocuments = async (caseId, files) => {
     });
 };
 
+// Get all documents for a case
+export const getCaseDocuments = async (caseId) => {
+    return axiosClient.get(`/cases/${caseId}/documents`);
+};
+
+// Delete a document
+export const deleteDocument = async (documentId) => {
+    return axiosClient.delete(`/cases/documents/${documentId}`);
+};
+
 // Update case status
 export const updateCaseStatus = async (caseId, status) => {
     return axiosClient.put(`/cases/${caseId}/status`, { status });
