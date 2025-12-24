@@ -46,13 +46,13 @@ public class ProfileController {
             }
 
             String token = authHeader.substring(7);
-            
+
             // Validate token is not expired
             if (jwtUtil.isTokenExpired(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Token has expired. Please login again.");
             }
-            
+
             // Extract email from token
             String email = jwtUtil.extractEmail(token);
             if (email == null) {
@@ -62,31 +62,25 @@ public class ProfileController {
 
             // Extract role from token
             String role = jwtUtil.extractRole(token);
+            System.out.println("DEBUG ROLE FROM TOKEN = " + role);
+
             if (role == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Invalid role");
             }
-            
-            // Validate token with email
-            if (!jwtUtil.validateToken(token, email)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Invalid token");
-            }
 
             Map<String, Object> profileData = new HashMap<>();
-            
-            if (role.equals("CITIZEN")) {
-                // Find citizen by email
+
+            if ("CITIZEN".equals(role)) {
                 Citizen citizen = citizenRepository.findByEmail(email);
                 if (citizen == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body("Citizen profile not found");
                 }
 
-                // Map entity to response DTO
                 profileData.put("id", citizen.getId());
                 profileData.put("fullName", citizen.getFullName());
-                profileData.put("shortName", citizen.getFullName() != null && citizen.getFullName().contains(" ") 
+                profileData.put("shortName", citizen.getFullName() != null && citizen.getFullName().contains(" ")
                         ? citizen.getFullName().split(" ")[0] + " " + citizen.getFullName().split(" ")[citizen.getFullName().split(" ").length - 1]
                         : citizen.getFullName());
                 profileData.put("aadhaar", citizen.getAadharNum());
@@ -99,18 +93,16 @@ public class ProfileController {
                 profileData.put("address", citizen.getAddress());
                 profileData.put("role", "CITIZEN");
                 profileData.put("photoUrl", citizen.getProfilePhotoUrl());
-            } else if (role.equals("ADMIN")) {
-                // Find admin by email
+            } else if ("ADMIN".equals(role)) {
                 Admin admin = adminRepository.findByEmail(email);
                 if (admin == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body("Admin profile not found");
                 }
 
-                // Map entity to response DTO
                 profileData.put("id", admin.getId());
                 profileData.put("fullName", admin.getFullName());
-                profileData.put("shortName", admin.getFullName() != null && admin.getFullName().contains(" ") 
+                profileData.put("shortName", admin.getFullName() != null && admin.getFullName().contains(" ")
                         ? admin.getFullName().split(" ")[0] + " " + admin.getFullName().split(" ")[admin.getFullName().split(" ").length - 1]
                         : admin.getFullName());
                 profileData.put("aadhaar", admin.getAadharNum());
@@ -158,13 +150,13 @@ public class ProfileController {
             }
 
             String token = authHeader.substring(7);
-            
+
             // Validate token is not expired
             if (jwtUtil.isTokenExpired(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Token has expired. Please login again.");
             }
-            
+
             // Extract email from token
             String email = jwtUtil.extractEmail(token);
             if (email == null) {
@@ -178,31 +170,22 @@ public class ProfileController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Invalid role");
             }
-            
-            // Validate token with email
-            if (!jwtUtil.validateToken(token, email)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Invalid token");
-            }
 
             Map<String, Object> profileData = new HashMap<>();
-            
-            if (role.equals("CITIZEN")) {
-                // Find citizen by email
+
+            if ("CITIZEN".equals(role)) {
                 Citizen citizen = citizenRepository.findByEmail(email);
                 if (citizen == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body("Citizen profile not found");
                 }
 
-                // Update fields if provided
                 if (fullName != null && !fullName.trim().isEmpty()) {
                     citizen.setFullName(fullName.trim());
                 }
 
                 if (aadhaar != null && !aadhaar.trim().isEmpty()) {
                     String aadhaarTrimmed = aadhaar.trim();
-                    // Check if Aadhaar already exists for another user
                     if (!citizen.getAadharNum().equals(aadhaarTrimmed)) {
                         boolean aadhaarExists = citizenRepository.existsByAadharNum(aadhaarTrimmed);
                         if (aadhaarExists) {
@@ -243,10 +226,8 @@ public class ProfileController {
                     citizen.setAddress(address.trim());
                 }
 
-                // Handle profile photo upload
                 if (profilePhoto != null && !profilePhoto.isEmpty()) {
                     try {
-                        // Upload image to Cloudinary
                         String photoUrl = cloudinaryService.uploadImage(profilePhoto, "citizens/profile-photos");
                         citizen.setProfilePhotoUrl(photoUrl);
                     } catch (IOException e) {
@@ -258,13 +239,11 @@ public class ProfileController {
                     }
                 }
 
-                // Save updated citizen
                 Citizen updatedCitizen = citizenRepository.save(citizen);
 
-                // Map entity to response DTO
                 profileData.put("id", updatedCitizen.getId());
                 profileData.put("fullName", updatedCitizen.getFullName());
-                profileData.put("shortName", updatedCitizen.getFullName() != null && updatedCitizen.getFullName().contains(" ") 
+                profileData.put("shortName", updatedCitizen.getFullName() != null && updatedCitizen.getFullName().contains(" ")
                         ? updatedCitizen.getFullName().split(" ")[0] + " " + updatedCitizen.getFullName().split(" ")[updatedCitizen.getFullName().split(" ").length - 1]
                         : updatedCitizen.getFullName());
                 profileData.put("aadhaar", updatedCitizen.getAadharNum());
@@ -277,22 +256,19 @@ public class ProfileController {
                 profileData.put("address", updatedCitizen.getAddress());
                 profileData.put("role", "CITIZEN");
                 profileData.put("photoUrl", updatedCitizen.getProfilePhotoUrl());
-            } else if (role.equals("ADMIN")) {
-                // Find admin by email
+            } else if ("ADMIN".equals(role)) {
                 Admin admin = adminRepository.findByEmail(email);
                 if (admin == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body("Admin profile not found");
                 }
 
-                // Update fields if provided
                 if (fullName != null && !fullName.trim().isEmpty()) {
                     admin.setFullName(fullName.trim());
                 }
 
                 if (aadhaar != null && !aadhaar.trim().isEmpty()) {
                     String aadhaarTrimmed = aadhaar.trim();
-                    // Check if Aadhaar already exists for another admin
                     if (!admin.getAadharNum().equals(aadhaarTrimmed)) {
                         boolean aadhaarExists = adminRepository.existsByAadharNum(aadhaarTrimmed);
                         if (aadhaarExists) {
@@ -333,10 +309,8 @@ public class ProfileController {
                     admin.setAddress(address.trim());
                 }
 
-                // Handle profile photo upload
                 if (profilePhoto != null && !profilePhoto.isEmpty()) {
                     try {
-                        // Upload image to Cloudinary
                         String photoUrl = cloudinaryService.uploadImage(profilePhoto, "admins/profile-photos");
                         admin.setProfilePhotoUrl(photoUrl);
                     } catch (IOException e) {
@@ -348,13 +322,11 @@ public class ProfileController {
                     }
                 }
 
-                // Save updated admin
                 Admin updatedAdmin = adminRepository.save(admin);
 
-                // Map entity to response DTO
                 profileData.put("id", updatedAdmin.getId());
                 profileData.put("fullName", updatedAdmin.getFullName());
-                profileData.put("shortName", updatedAdmin.getFullName() != null && updatedAdmin.getFullName().contains(" ") 
+                profileData.put("shortName", updatedAdmin.getFullName() != null && updatedAdmin.getFullName().contains(" ")
                         ? updatedAdmin.getFullName().split(" ")[0] + " " + updatedAdmin.getFullName().split(" ")[updatedAdmin.getFullName().split(" ").length - 1]
                         : updatedAdmin.getFullName());
                 profileData.put("aadhaar", updatedAdmin.getAadharNum());
@@ -385,4 +357,3 @@ public class ProfileController {
         }
     }
 }
-
