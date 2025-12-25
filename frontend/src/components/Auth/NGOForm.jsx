@@ -1,4 +1,10 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { updateNGO, submitRegistration } from "../../Redux/registerSlice";
@@ -10,14 +16,26 @@ import {
 } from "indian-states-cities-list";
 
 // Reusable input component - moved outside to prevent recreation on each render
-const InputField = ({ label, id, type = "text", placeholder, value, onChange, onBlur, disabled = false, error, touched, required = false }) => {
+const InputField = ({
+  label,
+  id,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  onBlur,
+  disabled = false,
+  error,
+  touched,
+  required = false,
+}) => {
   // If onChange is provided, it's a controlled component; otherwise, use defaultValue (uncontrolled)
   const inputProps = onChange
     ? { value: value || "", onChange, onBlur }
     : { defaultValue: value || "" };
-  
+
   const showError = touched && error;
-  
+
   return (
     <div className="flex flex-col">
       <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
@@ -37,9 +55,7 @@ const InputField = ({ label, id, type = "text", placeholder, value, onChange, on
             : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
         }`}
       />
-      {showError && (
-        <span className="text-red-500 text-sm mt-1">{error}</span>
-      )}
+      {showError && <span className="text-red-500 text-sm mt-1">{error}</span>}
     </div>
   );
 };
@@ -48,24 +64,24 @@ const NGOForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const scrollPositionRef = useRef(0);
-  
+
   // Store file in ref instead of Redux (files are not serializable)
   const registrationCertFileRef = useRef(null);
-  
+
   // Get NGO data from Redux store
   const ngo = useSelector((state) => state.register.ngo);
   const isLoading = useSelector((state) => state.register.loading);
-  
+
   // Validation state
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  
+
   // State management for location dropdowns
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedNgoType, setSelectedNgoType] = useState("");
-  
+
   // State management for latitude and longitude
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -290,7 +306,7 @@ const NGOForm = () => {
   // Handle field blur - validate on blur
   const handleBlur = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    
+
     // Handle latitude and longitude from local state
     if (field === "latitude") {
       const value = latitude || ngo.latitude || "";
@@ -343,29 +359,39 @@ const NGOForm = () => {
       },
       (error) => {
         setIsGettingLocation(false);
-        
+
         // Retry once with lower accuracy settings if timeout occurs
         if (error.code === error.TIMEOUT && retryCount === 0) {
-          console.log("First attempt timed out, retrying with lower accuracy...");
+          console.log(
+            "First attempt timed out, retrying with lower accuracy..."
+          );
           setTimeout(() => {
             handleGetCurrentLocation(1);
           }, 500);
           return;
         }
-        
+
         // Handle errors
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            setLocationError("Location access denied. Please enable location permissions in your browser settings.");
+            setLocationError(
+              "Location access denied. Please enable location permissions in your browser settings."
+            );
             break;
           case error.POSITION_UNAVAILABLE:
-            setLocationError("Location information unavailable. Please try entering coordinates manually.");
+            setLocationError(
+              "Location information unavailable. Please try entering coordinates manually."
+            );
             break;
           case error.TIMEOUT:
-            setLocationError("Location request timed out. Please check your GPS/WiFi connection or enter coordinates manually.");
+            setLocationError(
+              "Location request timed out. Please check your GPS/WiFi connection or enter coordinates manually."
+            );
             break;
           default:
-            setLocationError("Unable to get location. Please enter coordinates manually.");
+            setLocationError(
+              "Unable to get location. Please enter coordinates manually."
+            );
             break;
         }
       },
@@ -387,12 +413,12 @@ const NGOForm = () => {
   // Get districts based on selected state
   const districtOptions = useMemo(() => {
     if (!selectedState || !selectedStateObj) return [];
-    
+
     const stateKey = selectedStateObj.name;
     const districts = STATE_WISE_CITIES[stateKey];
-    
+
     if (!districts) return [];
-    
+
     // Convert array of district objects to options
     return Array.isArray(districts)
       ? districts.map((district) => ({
@@ -415,11 +441,11 @@ const NGOForm = () => {
   const handleStateChange = (state) => {
     // Save current scroll position
     scrollPositionRef.current = window.scrollY;
-    
+
     setSelectedState(state);
     setSelectedDistrict(""); // Reset district when state changes
     setSelectedCity(""); // Reset city when state changes
-    
+
     // Restore scroll position after state update
     setTimeout(() => {
       window.scrollTo({
@@ -433,10 +459,10 @@ const NGOForm = () => {
   const handleDistrictChange = (district) => {
     // Save current scroll position
     scrollPositionRef.current = window.scrollY;
-    
+
     setSelectedDistrict(district);
     setSelectedCity(""); // Reset city when district changes
-    
+
     // Restore scroll position after district update
     setTimeout(() => {
       window.scrollTo({
@@ -447,31 +473,42 @@ const NGOForm = () => {
   };
 
   // Update Redux state when form fields change - memoized to prevent re-renders
-  const handleChange = useCallback((field, value) => {
-    dispatch(updateNGO({ field, value }));
-    
-    // Validate on change if field has been touched
-    if (touched[field]) {
-      const error = validateField(field, value);
-      setErrors((prev) => ({ ...prev, [field]: error }));
-    }
-  }, [dispatch, touched]);
+  const handleChange = useCallback(
+    (field, value) => {
+      dispatch(updateNGO({ field, value }));
+
+      // Validate on change if field has been touched
+      if (touched[field]) {
+        const error = validateField(field, value);
+        setErrors((prev) => ({ ...prev, [field]: error }));
+      }
+    },
+    [dispatch, touched]
+  );
 
   // Handle file uploads - store files in refs, only store filename in Redux
-  const handleFileChange = useCallback((field, file) => {
-    // Validate file type - only PDF allowed
-    if (file && file.type !== "application/pdf") {
-      toast.error("Only PDF files are allowed. Please select a PDF file.");
-      return;
-    }
-    
-    // Store file in ref
-    if (field === "registrationCertificate") {
-      registrationCertFileRef.current = file;
-      // Only store filename in Redux (serializable)
-      dispatch(updateNGO({ field: "registrationCertificateFilename", value: file ? file.name : "" }));
-    }
-  }, [dispatch]);
+  const handleFileChange = useCallback(
+    (field, file) => {
+      // Validate file type - only PDF allowed
+      if (file && file.type !== "application/pdf") {
+        toast.error("Only PDF files are allowed. Please select a PDF file.");
+        return;
+      }
+
+      // Store file in ref
+      if (field === "registrationCertificate") {
+        registrationCertFileRef.current = file;
+        // Only store filename in Redux (serializable)
+        dispatch(
+          updateNGO({
+            field: "registrationCertificateFilename",
+            value: file ? file.name : "",
+          })
+        );
+      }
+    },
+    [dispatch]
+  );
 
   // Validate all fields before submission
   const validateAll = () => {
@@ -533,7 +570,7 @@ const NGOForm = () => {
   // 3. Create the submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate all fields before submission
     const validationResult = validateAll();
     if (!validationResult.isValid) {
@@ -551,7 +588,7 @@ const NGOForm = () => {
       }, 100);
       return;
     }
-    
+
     // Prepare form data with all fields including latitude and longitude
     const formData = {
       ...ngo,
@@ -560,7 +597,7 @@ const NGOForm = () => {
       // Add file from ref (not from Redux)
       registrationCertificate: registrationCertFileRef.current,
     };
-    
+
     // Update Redux with latest latitude/longitude if they exist
     if (latitude) {
       dispatch(updateNGO({ field: "latitude", value: latitude }));
@@ -568,7 +605,7 @@ const NGOForm = () => {
     if (longitude) {
       dispatch(updateNGO({ field: "longitude", value: longitude }));
     }
-    
+
     // Send to backend through Redux thunk
     const result = await dispatch(
       submitRegistration({ role: "NGO", data: formData })
@@ -580,7 +617,7 @@ const NGOForm = () => {
         result.payload?.data?.message ||
         "Registration successful! Redirecting to login...";
       toast.success(successMessage);
-      
+
       setTimeout(() => {
         navigate("/login");
       }, 1500);
@@ -602,9 +639,16 @@ const NGOForm = () => {
     }
   };
   // Reusable component for file upload fields - PDF only
-  const FileUploadField = ({ label, id, field, disabled = false, errors, touched }) => {
+  const FileUploadField = ({
+    label,
+    id,
+    field,
+    disabled = false,
+    errors,
+    touched,
+  }) => {
     const fileInputRef = useRef(null);
-    
+
     const handleFileInputChange = (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -616,17 +660,19 @@ const NGOForm = () => {
           }
           return;
         }
-        
+
         // Validate file size (max 5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB in bytes
         if (file.size > maxSize) {
-          toast.error("File size must be less than 5MB. Please select a smaller file.");
+          toast.error(
+            "File size must be less than 5MB. Please select a smaller file."
+          );
           if (fileInputRef.current) {
             fileInputRef.current.value = ""; // Clear the input
           }
           return;
         }
-        
+
         if (field) {
           handleFileChange(field, file);
           toast.success(`File selected: ${file.name}`);
@@ -635,23 +681,26 @@ const NGOForm = () => {
         // Clear file from ref if input is cleared
         if (field === "registrationCertificate") {
           registrationCertFileRef.current = null;
-          dispatch(updateNGO({ field: "registrationCertificateFilename", value: "" }));
+          dispatch(
+            updateNGO({ field: "registrationCertificateFilename", value: "" })
+          );
         }
       }
     };
-    
+
     // Get filename from Redux for display
     const filename = ngo.registrationCertificateFilename || "";
-    
+
     return (
-    <div className="flex flex-col">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
-          {label} <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(PDF only, max 5MB)</span>
-      </label>
+      <div className="flex flex-col">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
+          {label} <span className="text-red-500">*</span>{" "}
+          <span className="text-xs text-gray-500">(PDF only, max 5MB)</span>
+        </label>
         <div className="relative">
-      <input
-        type="file"
-        id={id}
+          <input
+            type="file"
+            id={id}
             ref={fileInputRef}
             onChange={handleFileInputChange}
             disabled={disabled || isLoading}
@@ -662,13 +711,17 @@ const NGOForm = () => {
           file:text-sm file:font-semibold
           file:bg-blue-50 file:text-blue-700
               hover:file:bg-blue-100 border border-gray-300 rounded-md shadow-sm ${
-                disabled || isLoading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                disabled || isLoading
+                  ? "cursor-not-allowed opacity-60"
+                  : "cursor-pointer"
               }`}
-      />
+          />
         </div>
         {filename ? (
           <div className="mt-1 flex items-center gap-1">
-            <span className="text-xs text-green-600 font-medium">✓ Selected:</span>
+            <span className="text-xs text-green-600 font-medium">
+              ✓ Selected:
+            </span>
             <span className="text-xs text-green-700">{filename}</span>
           </div>
         ) : (
@@ -679,22 +732,30 @@ const NGOForm = () => {
         {touched && errors && (
           <span className="text-red-500 text-sm mt-1">{errors}</span>
         )}
-    </div>
-  );
+      </div>
+    );
   };
 
   // Reusable component for select dropdowns
-  const SelectField = ({ label, id, options, value, onChange, onBlur, disabled = false }) => {
+  const SelectField = ({
+    label,
+    id,
+    options,
+    value,
+    onChange,
+    onBlur,
+    disabled = false,
+  }) => {
     const selectRef = useRef(null);
 
     const handleChange = (e) => {
       // Save scroll position before change
       scrollPositionRef.current = window.scrollY;
-      
+
       if (onChange) {
         onChange(e.target.value);
       }
-      
+
       // Restore scroll position after change
       setTimeout(() => {
         window.scrollTo({
@@ -709,57 +770,100 @@ const NGOForm = () => {
     };
 
     return (
-    <div className="flex flex-col">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <div className="relative">
-        <select
+      <div className="flex flex-col">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
+          {label}
+        </label>
+        <div className="relative">
+          <select
             ref={selectRef}
-          id={id}
+            id={id}
             value={value || ""}
             onChange={handleChange}
             onBlur={onBlur}
             disabled={disabled || isLoading}
             onFocus={(e) => {
               // Prevent scroll on focus
-              e.target.scrollIntoView({ behavior: "instant", block: "nearest" });
+              e.target.scrollIntoView({
+                behavior: "instant",
+                block: "nearest",
+              });
             }}
             className={`block w-full pl-3 pr-10 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-1 rounded-md shadow-sm border appearance-none ${
               disabled || isLoading
                 ? "bg-gray-100 cursor-not-allowed opacity-60"
                 : "cursor-pointer focus:ring-blue-500 focus:border-blue-500"
             }`}
-        >
-          <option value="">{`Select ${label.split(" ")[0]}`}</option>
+          >
+            <option value="">{`Select ${label.split(" ")[0]}`}</option>
             {options.map((option) => (
               <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-          <svg
-            className="h-5 w-5"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg
+              className="h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
   };
 
   const ngoTypeOptions = [
-    { label: "Charitable", value: "CH" },
-    { label: "Educational", value: "ED" },
+    { label: "Education & Literacy", value: "Education & Literacy" },
+    { label: "Healthcare & Medical Aid", value: "Healthcare & Medical Aid" },
+    { label: "Women Empowerment", value: "Women Empowerment" },
+    {
+      label: "Child Welfare & Protection",
+      value: "Child Welfare & Protection",
+    },
+    {
+      label: "Environment & Climate Action",
+      value: "Environment & Climate Action",
+    },
+    {
+      label: "Poverty Alleviation & Livelihood",
+      value: "Poverty Alleviation & Livelihood",
+    },
+    { label: "Legal Aid & Human Rights", value: "Legal Aid & Human Rights" },
+    {
+      label: "Rural & Community Development",
+      value: "Rural & Community Development",
+    },
+    {
+      label: "Disability & Special Needs Support",
+      value: "Disability & Special Needs Support",
+    },
+    {
+      label: "Disaster Relief & Rehabilitation",
+      value: "Disaster Relief & Rehabilitation",
+    },
+    {
+      label: "Youth Development & Sports",
+      value: "Youth Development & Sports",
+    },
+    { label: "Senior Citizen Welfare", value: "Senior Citizen Welfare" },
+    {
+      label: "Animal Welfare & Wildlife Conservation",
+      value: "Animal Welfare & Wildlife Conservation",
+    },
+    {
+      label: "Agriculture & Farmer Support",
+      value: "Agriculture & Farmer Support",
+    },
+    { label: "Water & Sanitation (WASH)", value: "Water & Sanitation (WASH)" },
   ];
 
   return (
@@ -778,10 +882,10 @@ const NGOForm = () => {
           disabled={isLoading}
         />
         <div className="flex flex-col">
-        <SelectField
-          label="Type of NGO"
-          id="ngo-type"
-          options={ngoTypeOptions}
+          <SelectField
+            label="NGO Specialization"
+            id="ngo-type"
+            options={ngoTypeOptions}
             value={selectedNgoType || ngo.ngoType || ""}
             onChange={(value) => {
               setSelectedNgoType(value);
@@ -814,7 +918,11 @@ const NGOForm = () => {
           label="Registration Certificate"
           id="reg-certificate"
           field="registrationCertificate"
-          errors={touched.registrationCertificate ? errors.registrationCertificate : null}
+          errors={
+            touched.registrationCertificate
+              ? errors.registrationCertificate
+              : null
+          }
           touched={touched.registrationCertificate}
         />
 
@@ -857,7 +965,7 @@ const NGOForm = () => {
           required
           disabled={isLoading}
         />
-        
+
         {/* State, District, City - Cascading dropdowns */}
         <div className="flex flex-col">
           <SelectField
@@ -999,7 +1107,8 @@ const NGOForm = () => {
           )}
           {!locationError && !isGettingLocation && (
             <div className="mb-2 p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded">
-              💡 Tip: Make sure location/GPS is enabled on your device. If it times out, enter coordinates manually.
+              💡 Tip: Make sure location/GPS is enabled on your device. If it
+              times out, enter coordinates manually.
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1041,7 +1150,9 @@ const NGOForm = () => {
                 }`}
               />
               {touched.latitude && errors.latitude && (
-                <span className="text-red-500 text-sm mt-1">{errors.latitude}</span>
+                <span className="text-red-500 text-sm mt-1">
+                  {errors.latitude}
+                </span>
               )}
             </div>
             <div className="flex flex-col">
@@ -1082,58 +1193,63 @@ const NGOForm = () => {
                 }`}
               />
               {touched.longitude && errors.longitude && (
-                <span className="text-red-500 text-sm mt-1">{errors.longitude}</span>
+                <span className="text-red-500 text-sm mt-1">
+                  {errors.longitude}
+                </span>
               )}
             </div>
           </div>
-          
+
           {/* Google Maps Preview */}
-          {latitude && longitude && isLatitudeValid(latitude) && isLongitudeValid(longitude) && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Location Preview
-                </label>
-                <a
-                  href={`https://www.google.com/maps?q=${latitude},${longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  <span>Open in Google Maps</span>
-                  <svg
-                    className="h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+          {latitude &&
+            longitude &&
+            isLatitudeValid(latitude) &&
+            isLongitudeValid(longitude) && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Location Preview
+                  </label>
+                  <a
+                    href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
-                  </svg>
-                </a>
+                    <span>Open in Google Maps</span>
+                    <svg
+                      className="h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </a>
+                </div>
+                <div className="w-full h-64 border border-gray-300 rounded-md overflow-hidden bg-gray-100">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps?q=${latitude},${longitude}&output=embed&z=15`}
+                    title="Location Preview"
+                  ></iframe>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Coordinates: {latitude}, {longitude}
+                </p>
               </div>
-              <div className="w-full h-64 border border-gray-300 rounded-md overflow-hidden bg-gray-100">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps?q=${latitude},${longitude}&output=embed&z=15`}
-                  title="Location Preview"
-                ></iframe>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Coordinates: {latitude}, {longitude}
-              </p>
-            </div>
-          )}
+            )}
         </div>
 
         <InputField

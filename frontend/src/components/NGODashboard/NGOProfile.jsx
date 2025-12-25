@@ -20,11 +20,11 @@ export default function NGOProfile({
   const fileInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const scrollPositionRef = useRef(0);
-  
+
   // State management for location dropdowns
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
-  
+
   // State to track validation errors
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -32,9 +32,13 @@ export default function NGOProfile({
   // State management for location fetching
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
-  
+
   // Get auth state from Redux
-  const { profile: reduxProfile, isLoading: isFetchingProfile, isAuthenticated } = useSelector((state) => state.auth);
+  const {
+    profile: reduxProfile,
+    isLoading: isFetchingProfile,
+    isAuthenticated,
+  } = useSelector((state) => state.auth);
 
   // Get all states
   const stateOptions = INDIAN_STATES_AND_UT_ARRAY.map((state) => ({
@@ -50,12 +54,12 @@ export default function NGOProfile({
   // Get districts based on selected state
   const districtOptions = useMemo(() => {
     if (!selectedState || !selectedStateObj) return [];
-    
+
     const stateKey = selectedStateObj.name;
     const districts = STATE_WISE_CITIES[stateKey];
-    
+
     if (!districts) return [];
-    
+
     // Extract unique districts from cities data
     const districtsSet = new Set();
     if (Array.isArray(districts)) {
@@ -66,7 +70,7 @@ export default function NGOProfile({
           districtsSet.add(item.value);
         }
       });
-    } else if (typeof districts === 'object') {
+    } else if (typeof districts === "object") {
       Object.values(districts).forEach((cityList) => {
         if (Array.isArray(cityList)) {
           cityList.forEach((city) => {
@@ -79,11 +83,13 @@ export default function NGOProfile({
         }
       });
     }
-    
-    return Array.from(districtsSet).sort().map((district) => ({
-      label: district,
-      value: district,
-    }));
+
+    return Array.from(districtsSet)
+      .sort()
+      .map((district) => ({
+        label: district,
+        value: district,
+      }));
   }, [selectedState, selectedStateObj]);
 
   // NGO Type options matching the registration form
@@ -103,17 +109,19 @@ export default function NGOProfile({
     dispatch(fetchUserProfile()).catch((error) => {
       console.error("Error fetching profile:", error);
       if (error?.response?.status === 403) {
-        toast.error("Profile endpoint not available for your role. Please contact support.");
+        toast.error(
+          "Profile endpoint not available for your role. Please contact support."
+        );
       } else if (error?.response?.status === 401) {
         toast.error("Session expired. Please login again.");
       }
     });
   }, [dispatch]);
-  
+
   // Also fetch when profile is empty but we have a token (fallback)
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (token && (!reduxProfile.email && !reduxProfile.ngoName)) {
+    if (token && !reduxProfile.email && !reduxProfile.ngoName) {
       dispatch(fetchUserProfile()).catch((error) => {
         console.error("Error fetching profile (fallback):", error);
       });
@@ -124,7 +132,7 @@ export default function NGOProfile({
   useEffect(() => {
     if (reduxProfile && (reduxProfile.email || reduxProfile.ngoName)) {
       console.log("Redux Profile Data:", reduxProfile);
-      
+
       setProfile({
         ngoName: reduxProfile.ngoName || "",
         ngoType: reduxProfile.ngoType || "",
@@ -141,13 +149,15 @@ export default function NGOProfile({
         photoUrl: reduxProfile.photoUrl || null,
         // NGO-specific fields
         registrationNumber: reduxProfile.registrationNumber || "",
-        registrationCertificateUrl: reduxProfile.registrationCertificateUrl || null,
-        registrationCertificateFilename: reduxProfile.registrationCertificateFilename || null,
+        registrationCertificateUrl:
+          reduxProfile.registrationCertificateUrl || null,
+        registrationCertificateFilename:
+          reduxProfile.registrationCertificateFilename || null,
         latitude: reduxProfile.latitude || null,
         longitude: reduxProfile.longitude || null,
         createdAt: reduxProfile.createdAt || null,
       });
-      
+
       if (reduxProfile.state) {
         setSelectedState(reduxProfile.state);
       }
@@ -170,7 +180,7 @@ export default function NGOProfile({
   // Cleanup photo URL on unmount
   useEffect(() => {
     return () => {
-      if (profile.photoUrl && profile.photoUrl.startsWith('blob:')) {
+      if (profile.photoUrl && profile.photoUrl.startsWith("blob:")) {
         URL.revokeObjectURL(profile.photoUrl);
       }
     };
@@ -241,9 +251,7 @@ export default function NGOProfile({
     });
 
     setErrors(newErrors);
-    setTouched(
-      fields.reduce((acc, field) => ({ ...acc, [field]: true }), {})
-    );
+    setTouched(fields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
 
     return Object.keys(newErrors).length === 0;
   };
@@ -255,7 +263,7 @@ export default function NGOProfile({
     handleProfileChange("state", state);
     handleProfileChange("district", "");
     handleProfileChange("city", "");
-    
+
     setTimeout(() => {
       window.scrollTo({
         top: scrollPositionRef.current,
@@ -269,7 +277,7 @@ export default function NGOProfile({
     setSelectedDistrict(district);
     handleProfileChange("district", district);
     handleProfileChange("city", "");
-    
+
     setTimeout(() => {
       window.scrollTo({
         top: scrollPositionRef.current,
@@ -281,14 +289,14 @@ export default function NGOProfile({
   // Validation functions for latitude and longitude
   const isLatitudeValid = (lat) => {
     if (!lat || lat === "") return false;
-    const num = typeof lat === 'string' ? parseFloat(lat) : lat;
+    const num = typeof lat === "string" ? parseFloat(lat) : lat;
     if (isNaN(num)) return false;
     return num >= -90 && num <= 90;
   };
 
   const isLongitudeValid = (lng) => {
     if (!lng || lng === "") return false;
-    const num = typeof lng === 'string' ? parseFloat(lng) : lng;
+    const num = typeof lng === "string" ? parseFloat(lng) : lng;
     if (isNaN(num)) return false;
     return num >= -180 && num <= 180;
   };
@@ -333,16 +341,24 @@ export default function NGOProfile({
 
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            setLocationError("Location access denied. Please enable location permissions in your browser settings.");
+            setLocationError(
+              "Location access denied. Please enable location permissions in your browser settings."
+            );
             break;
           case error.POSITION_UNAVAILABLE:
-            setLocationError("Location information unavailable. Please enter coordinates manually.");
+            setLocationError(
+              "Location information unavailable. Please enter coordinates manually."
+            );
             break;
           case error.TIMEOUT:
-            setLocationError("Location request timed out. Please check your GPS/WiFi connection.");
+            setLocationError(
+              "Location request timed out. Please check your GPS/WiFi connection."
+            );
             break;
           default:
-            setLocationError("Unable to get location. Please enter coordinates manually.");
+            setLocationError(
+              "Unable to get location. Please enter coordinates manually."
+            );
             break;
         }
       },
@@ -353,25 +369,25 @@ export default function NGOProfile({
   const handlePhotoChange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    
+
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       e.target.value = "";
       return;
     }
-    
+
     const maxSize = 500 * 1024;
     if (file.size > maxSize) {
       toast.error("Image size should be less than 500KB");
       e.target.value = "";
       return;
     }
-    
+
     // Clean up previous object URL if it exists
-    if (profile.photoUrl && profile.photoUrl.startsWith('blob:')) {
+    if (profile.photoUrl && profile.photoUrl.startsWith("blob:")) {
       URL.revokeObjectURL(profile.photoUrl);
     }
-    
+
     const url = URL.createObjectURL(file);
     setProfile((p) => ({ ...p, photo: file, photoUrl: url }));
     setErrors((prev) => ({ ...prev, photo: "" }));
@@ -380,34 +396,36 @@ export default function NGOProfile({
   const handleDownloadDocument = async (url, filename) => {
     try {
       setIsLoading(true);
-      
+
       // Fetch the file from Cloudinary
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error('Failed to fetch document');
+        throw new Error("Failed to fetch document");
       }
-      
+
       // Get the file as a blob
       const blob = await response.blob();
-      
+
       // Create a blob URL with the correct MIME type for PDF
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-      
+      const blobUrl = URL.createObjectURL(
+        new Blob([blob], { type: "application/pdf" })
+      );
+
       // Create a temporary download link
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = filename || 'document.pdf';
+      link.download = filename || "document.pdf";
       document.body.appendChild(link);
       link.click();
-      
+
       // Clean up
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
-      
-      toast.success('Document downloaded successfully');
+
+      toast.success("Document downloaded successfully");
     } catch (error) {
-      console.error('Error downloading document:', error);
-      toast.error('Failed to download document. Please try again.');
+      console.error("Error downloading document:", error);
+      toast.error("Failed to download document. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -416,13 +434,13 @@ export default function NGOProfile({
   const handleUpdateProfile = async () => {
     try {
       setIsLoading(true);
-      
+
       if (!validateAll()) {
         toast.error("Please fix all validation errors before saving");
         setIsLoading(false);
         return;
       }
-      
+
       const profileData = {
         ngoName: profile.ngoName?.trim() || "",
         fullName: profile.ngoName?.trim() || "", // Also send as fullName for backend compatibility
@@ -433,22 +451,32 @@ export default function NGOProfile({
         city: profile.city?.trim() || "",
         address: profile.address?.trim() || "",
         pincode: profile.pincode?.trim() || "",
-        latitude: profile.latitude !== null && profile.latitude !== undefined ? profile.latitude : "",
-        longitude: profile.longitude !== null && profile.longitude !== undefined ? profile.longitude : "",
+        latitude:
+          profile.latitude !== null && profile.latitude !== undefined
+            ? profile.latitude
+            : "",
+        longitude:
+          profile.longitude !== null && profile.longitude !== undefined
+            ? profile.longitude
+            : "",
       };
-      
+
       // Remove empty fields to avoid sending empty strings
-      Object.keys(profileData).forEach(key => {
-        if (profileData[key] === "" || profileData[key] === null || profileData[key] === undefined) {
+      Object.keys(profileData).forEach((key) => {
+        if (
+          profileData[key] === "" ||
+          profileData[key] === null ||
+          profileData[key] === undefined
+        ) {
           delete profileData[key];
         }
       });
 
       const response = await updateProfile(profileData, profile.photo);
-      
+
       if (response.data && response.data.data) {
         const updatedData = response.data.data;
-        
+
         // Preserve all existing profile data including NGO-specific fields
         setProfile({
           ngoName: updatedData.ngoName || profile.ngoName || "",
@@ -466,21 +494,33 @@ export default function NGOProfile({
           photoUrl: updatedData.photoUrl || profile.photoUrl,
           // Preserve NGO-specific read-only fields
           registrationNumber: profile.registrationNumber || "", // Preserve Registration Number (read-only)
-          registrationCertificateUrl: profile.registrationCertificateUrl || null,
-          registrationCertificateFilename: profile.registrationCertificateFilename || null,
-          latitude: updatedData.latitude !== undefined ? updatedData.latitude : profile.latitude,
-          longitude: updatedData.longitude !== undefined ? updatedData.longitude : profile.longitude,
+          registrationCertificateUrl:
+            profile.registrationCertificateUrl || null,
+          registrationCertificateFilename:
+            profile.registrationCertificateFilename || null,
+          latitude:
+            updatedData.latitude !== undefined
+              ? updatedData.latitude
+              : profile.latitude,
+          longitude:
+            updatedData.longitude !== undefined
+              ? updatedData.longitude
+              : profile.longitude,
           createdAt: profile.createdAt || null,
         });
 
         // Clean up blob URL if we had a temporary one
-        if (profile.photo && profile.photoUrl && profile.photoUrl.startsWith('blob:')) {
+        if (
+          profile.photo &&
+          profile.photoUrl &&
+          profile.photoUrl.startsWith("blob:")
+        ) {
           URL.revokeObjectURL(profile.photoUrl);
         }
 
         // Refresh profile from backend to get latest data
         dispatch(fetchUserProfile());
-        
+
         toast.success(response.data.message || "Profile updated successfully");
         setIsEditingProfile(false);
       } else {
@@ -491,7 +531,7 @@ export default function NGOProfile({
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      
+
       if (error.response?.status === 403) {
         toast.error(
           "Profile update is not yet supported for NGOs. Please contact support."
@@ -523,7 +563,12 @@ export default function NGOProfile({
   }
 
   // Show error state if profile fetch failed
-  if (!isFetchingProfile && !reduxProfile.email && !reduxProfile.ngoName && isAuthenticated) {
+  if (
+    !isFetchingProfile &&
+    !reduxProfile.email &&
+    !reduxProfile.ngoName &&
+    isAuthenticated
+  ) {
     return (
       <div className="w-full flex items-center justify-center py-12">
         <div className="text-center bg-white p-6 rounded-lg shadow">
@@ -597,17 +642,25 @@ export default function NGOProfile({
               <button
                 onClick={() => {
                   // Reset form to original values and cleanup photo URL if it's a blob
-                  if (profile.photo && profile.photoUrl && profile.photoUrl.startsWith('blob:')) {
+                  if (
+                    profile.photo &&
+                    profile.photoUrl &&
+                    profile.photoUrl.startsWith("blob:")
+                  ) {
                     URL.revokeObjectURL(profile.photoUrl);
                   }
                   // Reset to Redux profile values
-                  if (reduxProfile && (reduxProfile.email || reduxProfile.ngoName)) {
+                  if (
+                    reduxProfile &&
+                    (reduxProfile.email || reduxProfile.ngoName)
+                  ) {
                     setProfile({
                       ngoName: reduxProfile.ngoName || "",
                       ngoType: reduxProfile.ngoType || "",
                       role: reduxProfile.role || "NGO",
                       email: reduxProfile.email || "",
-                      contact: reduxProfile.contact || reduxProfile.mobile || "",
+                      contact:
+                        reduxProfile.contact || reduxProfile.mobile || "",
                       state: reduxProfile.state || "",
                       district: reduxProfile.district || "",
                       city: reduxProfile.city || "",
@@ -617,8 +670,10 @@ export default function NGOProfile({
                       photo: null,
                       photoUrl: reduxProfile.photoUrl || null,
                       registrationNumber: reduxProfile.registrationNumber || "",
-                      registrationCertificateUrl: reduxProfile.registrationCertificateUrl || null,
-                      registrationCertificateFilename: reduxProfile.registrationCertificateFilename || null,
+                      registrationCertificateUrl:
+                        reduxProfile.registrationCertificateUrl || null,
+                      registrationCertificateFilename:
+                        reduxProfile.registrationCertificateFilename || null,
                       latitude: reduxProfile.latitude || null,
                       longitude: reduxProfile.longitude || null,
                       createdAt: reduxProfile.createdAt || null,
@@ -655,7 +710,7 @@ export default function NGOProfile({
                 )}
               </div>
               {isEditingProfile && (
-                <div 
+                <div
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer"
                 >
@@ -681,7 +736,7 @@ export default function NGOProfile({
                 </div>
               )}
             </div>
-            
+
             {isEditingProfile && (
               <div className="w-full">
                 <input
@@ -754,18 +809,22 @@ export default function NGOProfile({
                   placeholder="Enter NGO name"
                 />
                 {errors.ngoName && touched.ngoName && (
-                  <span className="text-red-500 text-sm mt-1">{errors.ngoName}</span>
+                  <span className="text-red-500 text-sm mt-1">
+                    {errors.ngoName}
+                  </span>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  NGO Type <span className="text-gray-400">(Read-only)</span>
+                  NGO Specializations{" "}
+                  <span className="text-gray-400">(Read-only)</span>
                 </label>
                 <input
                   type="text"
                   value={
-                    ngoTypeOptions.find((opt) => opt.value === profile.ngoType)?.label ||
+                    ngoTypeOptions.find((opt) => opt.value === profile.ngoType)
+                      ?.label ||
                     profile.ngoType ||
                     ""
                   }
@@ -777,7 +836,8 @@ export default function NGOProfile({
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address <span className="text-gray-400">(Read-only)</span>
+                  Email Address{" "}
+                  <span className="text-gray-400">(Read-only)</span>
                 </label>
                 <input
                   type="email"
@@ -796,7 +856,9 @@ export default function NGOProfile({
                   type="tel"
                   value={profile.contact}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    const value = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
                     handleProfileChange("contact", value);
                   }}
                   onBlur={() => handleBlur("contact")}
@@ -812,13 +874,16 @@ export default function NGOProfile({
                   placeholder="10-digit contact number"
                 />
                 {errors.contact && touched.contact && (
-                  <span className="text-red-500 text-sm mt-1">{errors.contact}</span>
+                  <span className="text-red-500 text-sm mt-1">
+                    {errors.contact}
+                  </span>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Registration Number <span className="text-gray-400">(Read-only)</span>
+                  Registration Number{" "}
+                  <span className="text-gray-400">(Read-only)</span>
                 </label>
                 <input
                   type="text"
@@ -831,16 +896,33 @@ export default function NGOProfile({
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Registration Certificate Document <span className="text-gray-400">(Read-only)</span>
+                  Registration Certificate Document{" "}
+                  <span className="text-gray-400">(Read-only)</span>
                 </label>
                 {profile.registrationCertificateUrl ? (
                   <button
-                    onClick={() => handleDownloadDocument(profile.registrationCertificateUrl, profile.registrationCertificateFilename || 'registration-certificate.pdf')}
+                    onClick={() =>
+                      handleDownloadDocument(
+                        profile.registrationCertificateUrl,
+                        profile.registrationCertificateFilename ||
+                          "registration-certificate.pdf"
+                      )
+                    }
                     disabled={isLoading}
                     className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
                     </svg>
                     <span>Download Registration Certificate PDF</span>
                   </button>
@@ -863,7 +945,8 @@ export default function NGOProfile({
                   step="any"
                   value={profile.latitude || ""}
                   onChange={(e) => {
-                    const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                    const value =
+                      e.target.value === "" ? "" : parseFloat(e.target.value);
                     handleProfileChange("latitude", isNaN(value) ? "" : value);
                     setLocationError("");
                   }}
@@ -886,7 +969,8 @@ export default function NGOProfile({
                   step="any"
                   value={profile.longitude || ""}
                   onChange={(e) => {
-                    const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                    const value =
+                      e.target.value === "" ? "" : parseFloat(e.target.value);
                     handleProfileChange("longitude", isNaN(value) ? "" : value);
                     setLocationError("");
                   }}
@@ -912,17 +996,49 @@ export default function NGOProfile({
                     >
                       {isGettingLocation ? (
                         <>
-                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          <svg
+                            className="animate-spin h-4 w-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
                           </svg>
                           <span>Getting Location...</span>
                         </>
                       ) : (
                         <>
-                          <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <svg
+                            className="h-4 w-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
                           </svg>
                           <span>Get Current Location</span>
                         </>
@@ -938,7 +1054,8 @@ export default function NGOProfile({
                   )}
                   {!locationError && !isGettingLocation && (
                     <div className="mb-2 p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded">
-                      💡 Tip: Use "Get Current Location" to use your device's GPS to fetch your coordinates.
+                      💡 Tip: Use "Get Current Location" to use your device's
+                      GPS to fetch your coordinates.
                     </div>
                   )}
                 </div>
@@ -1048,9 +1165,7 @@ export default function NGOProfile({
                 <input
                   type="text"
                   value={profile.city || ""}
-                  onChange={(e) =>
-                    handleProfileChange("city", e.target.value)
-                  }
+                  onChange={(e) => handleProfileChange("city", e.target.value)}
                   disabled={!isEditingProfile}
                   className={`w-full p-3 border-2 rounded-lg transition-all duration-200 ${
                     isEditingProfile
@@ -1109,4 +1224,3 @@ export default function NGOProfile({
     </div>
   );
 }
-
