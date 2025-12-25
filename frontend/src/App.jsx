@@ -1,35 +1,44 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { getProfile } from "./api/auth.js";
+
+// Auth Components
 import Login from "./components/Auth/Login.jsx";
 import Register from "./components/Auth/Register.jsx";
+import ForgotPassword from "./components/Auth/ForgotPassword.jsx";
+import VerifyOTP from "./components/Auth/VerifyOTP.jsx";
+import ResetPassword from "./components/Auth/ResetPassword.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+
+// Dashboards
+import CitizenDashboard from "./components/Dashboard/CitizenDashboard.jsx";
+import LawyerDashboard from "./components/lawyerDashboard/LawyerDashboard.jsx";
+import NGODashboard from "./components/NGODashboard/NGODashboard.jsx";
+import AdminDashboard from "./components/adminDashbaord/AdminDashboard.jsx";
+
+// Pages
 import Home from "./pages/Home.jsx";
 import Profile from "./pages/Profile.jsx";
 import Services from "./Services.jsx";
 import About from "./About.jsx";
 import Contact from "./Contact.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import CitizenDashboard from "./components/Dashboard/CitizenDashboard.jsx";
-import LawyerDashboard from "./components/lawyerDashboard/LawyerDashboard.jsx";
-import NGODashboard from "./components/NGODashboard/NGODashboard.jsx";
-import AdminDashboard from "./components/adminDashbaord/AdminDashboard.jsx";
-import { getProfile } from "./api/auth.js";
 import MapComponent from "./pages/MapComponent.jsx";
-import ForgotPassword from "./components/Auth/ForgotPassword.jsx"; //New added
-import VerifyOTP from "./components/Auth/VerifyOTP.jsx";
-import ResetPassword from "./components/Auth/ResetPassword.jsx";
 
-//New added
+// Citizen Task Pages
+import MyCases from "./pages/MyCases.jsx";
+import CaseDetails from "./pages/CaseDetails.jsx";
+import LegalDirectory from "./pages/LegalDirectory.jsx";
 
 export default function App() {
   const [user, setUser] = useState({
-    name: "sachin",
-    role: "LAWYER",
+    name: "Sachin",
+    role: "CITIZEN", // default for testing
   });
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // Only try to fetch profile if there's a token
       const token = localStorage.getItem("accessToken");
       if (!token) {
         setUser(null);
@@ -38,12 +47,10 @@ export default function App() {
 
       try {
         const res = await getProfile();
-        if (res && res.data) {
+        if (res?.data) {
           setUser(res.data);
         }
       } catch (error) {
-        // Silently fail - user is not logged in
-        // Clear any invalid token
         if (error.response?.status === 401) {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
@@ -51,51 +58,60 @@ export default function App() {
         setUser(null);
       }
     };
+
     fetchProfile();
   }, []);
 
-  // const onLogin = (userData) => {
-  //   setUser(userData);
-  //   console.log(userData.role);
-  //   if (userData.role === "CITIZEN") navigate("/dashboard/citizen");
-  //   else if (userData.role === "LAWYER") navigate("/dashboard/lawyer");
-  //   else if (userData.role === "NGO") navigate("/dashboard/ngo");
-  //   else if (userData.role === "ADMIN") navigate("/dashboard/admin");
-  //   else navigate("/");
-  // };
-
   const onLogin = (userData) => {
     setUser(userData);
-    navigate("/dashboard/citizen", {
-      state: { success: "Login successful!" },
-    });
+
+    if (userData.role === "CITIZEN") navigate("/citizen/dashboard");
+    else if (userData.role === "LAWYER") navigate("/lawyer/dashboard");
+    else if (userData.role === "NGO") navigate("/ngo/dashboard");
+    else if (userData.role === "ADMIN") navigate("/dashboard/admin");
+    else navigate("/");
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50">
       <Routes>
-        //new added
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login onLogin={onLogin} />} />
+        <Route path="/register" element={<Register onRegister={onLogin} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        //new added
-        <Route path="/map" element={<MapComponent />} />
-        <Route path="/" element={<Home user={user} />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register onRegister={onLogin} />} />
-        {/* ⭐ Newly added pages */}
+
+        {/* Static Pages */}
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
-        {/* Protected Routes */}
-        {/* <Route element={<ProtectedRoute user={user} />}> */}
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/map" element={<MapComponent />} />
+
+        {/* Protected Common Route */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute user={user}>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Citizen Routes */}
         <Route path="/citizen/dashboard" element={<CitizenDashboard />} />
+        <Route path="/citizen/my-cases" element={<MyCases />} />
+        <Route path="/citizen/case-details/:id" element={<CaseDetails />} />
+        <Route path="/citizen/find-help" element={<LegalDirectory />} />
+
+        {/* Other Dashboards */}
         <Route path="/lawyer/dashboard" element={<LawyerDashboard />} />
         <Route path="/ngo/dashboard" element={<NGODashboard />} />
-        <Route path="/dashboard/admin" element={<AdminDashboard />} />{" "}
-        {/* </Route> */}
-        {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
   );

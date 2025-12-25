@@ -7,21 +7,19 @@ import com.example.demo.repository.CaseDocumentRepository;
 import com.example.demo.service.CloudinaryService;
 import com.example.demo.util.JwtUtil;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/cases")
-@CrossOrigin(origins = "http://localhost:5173", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+@CrossOrigin(
+        origins = "http://localhost:5173",
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
+)
 public class CaseController {
 
     private final CaseRepository caseRepository;
@@ -51,6 +49,19 @@ public class CaseController {
         }
     }
 
+    // Extract role from JWT token
+    private String extractUserRole(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7);
+        try {
+            return jwtUtil.extractRole(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // Save step data (creates new case or updates existing draft)
     @PostMapping("/save-step")
     public ResponseEntity<?> saveStep(
@@ -63,7 +74,7 @@ public class CaseController {
             }
 
             Integer step = (Integer) requestData.get("step");
-            Long caseId = requestData.get("caseId") != null ? 
+            Long caseId = requestData.get("caseId") != null ?
                     Long.valueOf(requestData.get("caseId").toString()) : null;
 
             Case caseEntity;
@@ -218,7 +229,7 @@ public class CaseController {
         }
     }
 
-    // Get case by ID
+    // Get case by ID (owner OR admin)
     @GetMapping("/{id}")
     public ResponseEntity<?> getCaseById(
             @RequestHeader("Authorization") String authHeader,
@@ -229,7 +240,18 @@ public class CaseController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
             }
 
-            Optional<Case> caseEntity = caseRepository.findByIdAndCitizenId(id, citizenId);
+            String role = extractUserRole(authHeader);
+
+            Optional<Case> caseEntity;
+
+            if ("ADMIN".equalsIgnoreCase(role)) {
+                // Admin can view any case
+                caseEntity = caseRepository.findById(id);
+            } else {
+                // Citizen can view only own case
+                caseEntity = caseRepository.findByIdAndCitizenId(id, citizenId);
+            }
+
             if (caseEntity.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Case not found");
             }
@@ -270,8 +292,14 @@ public class CaseController {
 
                 // Validate file type - only PDFs allowed
                 String contentType = file.getContentType();
+<<<<<<< HEAD
                 if (contentType == null || !contentType.equals("application/pdf")) {
                     errors.add(file.getOriginalFilename() + ": Only PDF files allowed");
+=======
+                if (contentType == null || (!contentType.equals("application/pdf")
+                        && !contentType.startsWith("image/"))) {
+                    errors.add(file.getOriginalFilename() + ": Only PDF and image files allowed");
+>>>>>>> first_milestone
                     continue;
                 }
 
@@ -469,4 +497,3 @@ public class CaseController {
         }
     }
 }
-
