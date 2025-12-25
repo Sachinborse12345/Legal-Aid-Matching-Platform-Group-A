@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/admin/directory")
+@RequestMapping("/api/admin/directory")
 public class DirectoryUploadController {
 
     private final DirectoryService directoryService;
@@ -16,10 +16,8 @@ public class DirectoryUploadController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadDirectory(
-            @RequestParam("file") MultipartFile file) {
-
-        directoryService.uploadFile(file);
+    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) {
+        directoryService.importFromCsv(file);
         return ResponseEntity.ok("Directory uploaded successfully");
     }
 }

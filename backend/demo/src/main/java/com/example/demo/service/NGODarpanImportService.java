@@ -17,11 +17,11 @@ public class NGODarpanImportService {
     }
 
     public void importCSV(String fileName) {
-
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(
-                        getClass().getClassLoader().getResourceAsStream(fileName)))) {
-
+                        getClass().getClassLoader().getResourceAsStream(fileName)
+                )
+        )) {
             String line;
             br.readLine(); // skip header
 
@@ -32,16 +32,16 @@ public class NGODarpanImportService {
                 d.setName(data[0]);
                 d.setType("NGO");
                 d.setState(data[1]);
-                d.setDistrict(data[2]);
+                d.setState(data[2]);
                 d.setSpecialization(data[3]);
                 d.setContactPhone(data[4]);
+                d.setVerified(true);           // ✅ BLUE TICK
                 d.setSource("NGO_DARPAN");
 
                 repository.save(d);
             }
-
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to import NGO CSV", e);
         }
     }
 }
