@@ -28,17 +28,6 @@ const mapToIssueKey = (value = "") => {
   return "";
 };
 
-const SPECIALIZATIONS = [
-  "ALL",
-  "Criminal Law",
-  "Civil Law",
-  "Family Law",
-  "Corporate Law",
-  "Property Law",
-  "Environmental",
-  "Healthcare",
-];
-
 export default function CitizenFindLawyer({
   setActivePage,
   setSelectedRecipient,
@@ -51,6 +40,10 @@ export default function CitizenFindLawyer({
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [specialization, setSpecialization] = useState("ALL");
   const [location, setLocation] = useState("");
+
+  /* PAGINATION */
+  const ITEMS_PER_PAGE = 6;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -77,7 +70,12 @@ export default function CitizenFindLawyer({
     fetchData();
   }, []);
 
-  /* ---------------- NORMALIZE DATA (LOGIC ONLY) ---------------- */
+  /* RESET PAGE WHEN FILTER CHANGES */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, typeFilter, specialization, location]);
+
+  /* ---------------- NORMALIZE DATA ---------------- */
   const directoryData = useMemo(() => {
     const lawyerData = lawyers.map((l) => ({
       id: l.id,
@@ -94,7 +92,7 @@ export default function CitizenFindLawyer({
     const ngoData = ngos.map((n) => ({
       id: n.id,
       name: n.ngoName || n.name,
-      specialization: n.ngoType, // EXACT registration value
+      specialization: n.ngoType,
       issueKey: mapToIssueKey(n.ngoType),
       city: n.city,
       district: n.district,
@@ -106,7 +104,7 @@ export default function CitizenFindLawyer({
     return [...lawyerData, ...ngoData];
   }, [lawyers, ngos]);
 
-  /* ---------------- FILTER LOGIC (ONLY CHANGE) ---------------- */
+  /* ---------------- FILTER LOGIC ---------------- */
   const filteredResults = useMemo(() => {
     return directoryData.filter((item) => {
       const searchMatch =
@@ -129,6 +127,14 @@ export default function CitizenFindLawyer({
     });
   }, [directoryData, search, typeFilter, specialization, location]);
 
+  /* ---------------- PAGINATION LOGIC ---------------- */
+  const totalPages = Math.ceil(filteredResults.length / ITEMS_PER_PAGE);
+
+  const paginatedResults = filteredResults.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   /* ---------------- LOADING / ERROR ---------------- */
   if (loading) {
     return (
@@ -142,12 +148,12 @@ export default function CitizenFindLawyer({
     return <div className="p-10 text-center text-red-600">{error}</div>;
   }
 
-  /* ---------------- UI (UNCHANGED) ---------------- */
+  /* ---------------- UI ---------------- */
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Find Lawyers & NGOs</h2>
 
-      {/* FILTERS */}
+      {/* FILTERS (UNCHANGED) */}
       <div className="bg-white p-4 rounded-xl shadow grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="relative md:col-span-2">
           <FiSearch className="absolute left-3 top-3 text-gray-400" />
@@ -175,11 +181,11 @@ export default function CitizenFindLawyer({
           className="p-3 border rounded-lg"
         >
           <option value="ALL">All Specializations</option>
-          {SPECIALIZATIONS.filter((s) => s !== "ALL").map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
+          <option value="Criminal Law">Criminal Law</option>
+          <option value="Civil Law">Civil Law</option>
+          <option value="Family Law">Family Law</option>
+          <option value="Property Law">Property Law</option>
+          <option value="Corporate Law">Corporate Law</option>
         </select>
 
         <input
@@ -190,12 +196,12 @@ export default function CitizenFindLawyer({
         />
       </div>
 
-      {/* RESULTS */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredResults.map((item) => (
+      {/* RESULTS GRID */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        {paginatedResults.map((item) => (
           <div
             key={`${item.entityType}-${item.id}`}
-            className="bg-white rounded-xl shadow border"
+            className="bg-white rounded-xl shadow border flex flex-col h-full"
           >
             <div className="p-4 border-b flex gap-3 items-center">
               <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-700">
@@ -215,7 +221,7 @@ export default function CitizenFindLawyer({
               </div>
             </div>
 
-            <div className="p-4 text-sm text-gray-600 space-y-2">
+            <div className="p-4 text-sm text-gray-600 space-y-2 flex-1">
               <div className="flex items-center gap-2">
                 <FiUser /> {item.specialization}
               </div>
@@ -225,7 +231,7 @@ export default function CitizenFindLawyer({
               </div>
             </div>
 
-            <div className="p-4 border-t">
+            <div className="p-4 border-t mt-auto">
               <button
                 onClick={() => {
                   setActivePage("messages");
@@ -243,6 +249,31 @@ export default function CitizenFindLawyer({
           </div>
         ))}
       </div>
+
+      {/* PAGINATION CONTROLS */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          <span className="px-4 py-2">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
