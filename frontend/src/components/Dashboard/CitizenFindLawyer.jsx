@@ -3,24 +3,47 @@ import { useEffect, useMemo, useState } from "react";
 import { FiSearch, FiMapPin, FiUser } from "react-icons/fi";
 import { BsPatchCheckFill } from "react-icons/bs";
 
+/* --------------------------------------------------
+   REAL-WORLD SPECIALIZATION MAPPING (LOGIC ONLY)
+-------------------------------------------------- */
+const mapToIssueKey = (value = "") => {
+  const v = value.toLowerCase();
+
+  // Lawyers
+  if (v.includes("criminal") || v === "cr") return "criminal";
+  if (v.includes("civil")) return "civil";
+  if (v.includes("family")) return "family";
+  if (v.includes("property")) return "property";
+  if (v.includes("corporate")) return "corporate";
+
+  // NGOs → mapped to legal issues
+  if (v.includes("legal") || v.includes("human")) return "criminal";
+  if (v.includes("women")) return "family";
+  if (v.includes("child")) return "family";
+  if (v.includes("environment")) return "environmental";
+  if (v.includes("health")) return "healthcare";
+  if (v.includes("poverty") || v.includes("livelihood")) return "labour";
+  if (v.includes("rural")) return "property";
+
+  return "";
+};
+
 const SPECIALIZATIONS = [
-  "Criminal",
-  "Civil",
-  "Family",
-  "Property",
-  "Corporate",
-  "Labour",
-  "Women",
-  "Child",
-  "Human Rights",
+  "ALL",
+  "Criminal Law",
+  "Civil Law",
+  "Family Law",
+  "Corporate Law",
+  "Property Law",
   "Environmental",
+  "Healthcare",
 ];
 
 export default function CitizenFindLawyer({
   setActivePage,
   setSelectedRecipient,
 }) {
-  /* ---------------- STATES ---------------- */
+  /* ---------------- STATE ---------------- */
   const [lawyers, setLawyers] = useState([]);
   const [ngos, setNgos] = useState([]);
 
@@ -34,7 +57,7 @@ export default function CitizenFindLawyer({
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    const fetchDirectoryData = async () => {
+    const fetchData = async () => {
       try {
         const [lawyerRes, ngoRes] = await Promise.all([
           axios.get("http://localhost:8080/api/lawyers"),
@@ -51,15 +74,16 @@ export default function CitizenFindLawyer({
       }
     };
 
-    fetchDirectoryData();
+    fetchData();
   }, []);
 
-  /* ---------------- NORMALIZE BACKEND DATA ---------------- */
+  /* ---------------- NORMALIZE DATA (LOGIC ONLY) ---------------- */
   const directoryData = useMemo(() => {
     const lawyerData = lawyers.map((l) => ({
       id: l.id,
       name: l.fullName,
       specialization: l.specialization,
+      issueKey: mapToIssueKey(l.specialization),
       city: l.city,
       district: l.district,
       state: l.state,
@@ -70,7 +94,8 @@ export default function CitizenFindLawyer({
     const ngoData = ngos.map((n) => ({
       id: n.id,
       name: n.ngoName || n.name,
-      specialization: n.focusArea || n.specialization,
+      specialization: n.ngoType, // EXACT registration value
+      issueKey: mapToIssueKey(n.ngoType),
       city: n.city,
       district: n.district,
       state: n.state,
@@ -81,7 +106,7 @@ export default function CitizenFindLawyer({
     return [...lawyerData, ...ngoData];
   }, [lawyers, ngos]);
 
-  /* ---------------- SEARCH + FILTER ---------------- */
+  /* ---------------- FILTER LOGIC (ONLY CHANGE) ---------------- */
   const filteredResults = useMemo(() => {
     return directoryData.filter((item) => {
       const searchMatch =
@@ -92,7 +117,7 @@ export default function CitizenFindLawyer({
 
       const specializationMatch =
         specialization === "ALL" ||
-        item.specialization?.toLowerCase() === specialization.toLowerCase();
+        mapToIssueKey(specialization) === item.issueKey;
 
       const locationMatch =
         !location ||
@@ -117,7 +142,7 @@ export default function CitizenFindLawyer({
     return <div className="p-10 text-center text-red-600">{error}</div>;
   }
 
-  /* ---------------- UI ---------------- */
+  /* ---------------- UI (UNCHANGED) ---------------- */
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Find Lawyers & NGOs</h2>
@@ -150,7 +175,7 @@ export default function CitizenFindLawyer({
           className="p-3 border rounded-lg"
         >
           <option value="ALL">All Specializations</option>
-          {SPECIALIZATIONS.map((s) => (
+          {SPECIALIZATIONS.filter((s) => s !== "ALL").map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
