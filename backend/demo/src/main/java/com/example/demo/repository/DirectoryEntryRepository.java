@@ -1,19 +1,50 @@
-package com.example.demo.repository;   // <-- must be first line
+package com.example.demo.repository;
 
 import com.example.demo.entity.DirectoryEntry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-@Repository
-public interface DirectoryEntryRepository extends JpaRepository<DirectoryEntry, Long> {
+public interface DirectoryEntryRepository extends JpaRepository<DirectoryEntry, Integer> {
 
-    Page<DirectoryEntry> findByTypeAndStateAndDistrictAndSpecializationContainingIgnoreCase(
-            String type,
-            String state,
-            String district,
-            String specialization,
-            Pageable pageable
-    );
+  @Query(value = """
+      SELECT * FROM directory_entries
+      WHERE (approved = true)
+        AND (CAST(:type AS text) IS NULL OR type = CAST(:type AS text))
+        AND (CAST(:name AS text) IS NULL OR LOWER(CAST(name AS text)) LIKE CAST(:name AS text))
+        AND (CAST(:state AS text) IS NULL OR state = CAST(:state AS text))
+        AND (CAST(:district AS text) IS NULL OR (LOWER(CAST(district AS text)) LIKE CAST(:district AS text) OR LOWER(CAST(state AS text)) LIKE CAST(:district AS text) OR LOWER(CAST(city AS text)) LIKE CAST(:district AS text)))
+        AND (CAST(:specialization AS text) IS NULL OR specialization = CAST(:specialization AS text))
+        AND (:minExperience IS NULL OR experience_years >= :minExperience)
+      """, countQuery = """
+      SELECT count(*) FROM directory_entries
+      WHERE (approved = true)
+        AND (CAST(:type AS text) IS NULL OR type = CAST(:type AS text))
+        AND (CAST(:name AS text) IS NULL OR LOWER(CAST(name AS text)) LIKE CAST(:name AS text))
+        AND (CAST(:state AS text) IS NULL OR state = CAST(:state AS text))
+        AND (CAST(:district AS text) IS NULL OR (LOWER(CAST(district AS text)) LIKE CAST(:district AS text) OR LOWER(CAST(state AS text)) LIKE CAST(:district AS text) OR LOWER(CAST(city AS text)) LIKE CAST(:district AS text)))
+        AND (CAST(:specialization AS text) IS NULL OR specialization = CAST(:specialization AS text))
+        AND (:minExperience IS NULL OR experience_years >= :minExperience)
+      """, nativeQuery = true)
+  Page<DirectoryEntry> searchDirectory(
+      @Param("type") String type,
+      @Param("name") String name,
+      @Param("state") String state,
+      @Param("district") String district,
+      @Param("specialization") String specialization,
+      @Param("minExperience") Integer minExperience,
+      Pageable pageable);
+
+  // Find entry to sync updates
+  DirectoryEntry findByTypeAndRegistrationNumber(String type, String registrationNumber);
+
+  DirectoryEntry findByTypeAndBarCouncilId(String type, String barCouncilId);
+
+  // for lawyer verification: directory has LAWYER entries with barCouncilId
+  boolean existsByTypeAndBarCouncilId(String type, String barCouncilId);
+
+  // for NGO verification: directory has NGO entries with registrationNumber
+  boolean existsByTypeAndRegistrationNumber(String type, String registrationNumber);
 }

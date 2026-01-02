@@ -15,9 +15,9 @@ const InputField = ({ label, id, type = "text", placeholder, value, onChange, on
   const inputProps = onChange
     ? { value: value || "", onChange, onBlur }
     : { defaultValue: value || "" };
-  
+
   const showError = touched && error;
-  
+
   return (
     <div className="flex flex-col">
       <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
@@ -29,13 +29,12 @@ const InputField = ({ label, id, type = "text", placeholder, value, onChange, on
         placeholder={placeholder}
         {...inputProps}
         disabled={disabled}
-        className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
-          disabled
+        className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${disabled
             ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-300"
             : showError
-            ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-        }`}
+              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+          }`}
       />
       {showError && (
         <span className="text-red-500 text-sm mt-1">{error}</span>
@@ -48,24 +47,24 @@ const NGOForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const scrollPositionRef = useRef(0);
-  
+
   // Store file in ref instead of Redux (files are not serializable)
   const registrationCertFileRef = useRef(null);
-  
+
   // Get NGO data from Redux store
   const ngo = useSelector((state) => state.register.ngo);
   const isLoading = useSelector((state) => state.register.loading);
-  
+
   // Validation state
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  
+
   // State management for location dropdowns
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedNgoType, setSelectedNgoType] = useState("");
-  
+
   // State management for latitude and longitude
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -290,7 +289,7 @@ const NGOForm = () => {
   // Handle field blur - validate on blur
   const handleBlur = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    
+
     // Handle latitude and longitude from local state
     if (field === "latitude") {
       const value = latitude || ngo.latitude || "";
@@ -343,7 +342,7 @@ const NGOForm = () => {
       },
       (error) => {
         setIsGettingLocation(false);
-        
+
         // Retry once with lower accuracy settings if timeout occurs
         if (error.code === error.TIMEOUT && retryCount === 0) {
           console.log("First attempt timed out, retrying with lower accuracy...");
@@ -352,7 +351,7 @@ const NGOForm = () => {
           }, 500);
           return;
         }
-        
+
         // Handle errors
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -387,18 +386,18 @@ const NGOForm = () => {
   // Get districts based on selected state
   const districtOptions = useMemo(() => {
     if (!selectedState || !selectedStateObj) return [];
-    
+
     const stateKey = selectedStateObj.name;
     const districts = STATE_WISE_CITIES[stateKey];
-    
+
     if (!districts) return [];
-    
+
     // Convert array of district objects to options
     return Array.isArray(districts)
       ? districts.map((district) => ({
-          label: district.label || district.value,
-          value: district.value,
-        }))
+        label: district.label || district.value,
+        value: district.value,
+      }))
       : [];
   }, [selectedState, selectedStateObj]);
 
@@ -415,11 +414,11 @@ const NGOForm = () => {
   const handleStateChange = (state) => {
     // Save current scroll position
     scrollPositionRef.current = window.scrollY;
-    
+
     setSelectedState(state);
     setSelectedDistrict(""); // Reset district when state changes
     setSelectedCity(""); // Reset city when state changes
-    
+
     // Restore scroll position after state update
     setTimeout(() => {
       window.scrollTo({
@@ -433,10 +432,10 @@ const NGOForm = () => {
   const handleDistrictChange = (district) => {
     // Save current scroll position
     scrollPositionRef.current = window.scrollY;
-    
+
     setSelectedDistrict(district);
     setSelectedCity(""); // Reset city when district changes
-    
+
     // Restore scroll position after district update
     setTimeout(() => {
       window.scrollTo({
@@ -449,7 +448,7 @@ const NGOForm = () => {
   // Update Redux state when form fields change - memoized to prevent re-renders
   const handleChange = useCallback((field, value) => {
     dispatch(updateNGO({ field, value }));
-    
+
     // Validate on change if field has been touched
     if (touched[field]) {
       const error = validateField(field, value);
@@ -464,7 +463,7 @@ const NGOForm = () => {
       toast.error("Only PDF files are allowed. Please select a PDF file.");
       return;
     }
-    
+
     // Store file in ref
     if (field === "registrationCertificate") {
       registrationCertFileRef.current = file;
@@ -533,7 +532,7 @@ const NGOForm = () => {
   // 3. Create the submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate all fields before submission
     const validationResult = validateAll();
     if (!validationResult.isValid) {
@@ -551,7 +550,7 @@ const NGOForm = () => {
       }, 100);
       return;
     }
-    
+
     // Prepare form data with all fields including latitude and longitude
     const formData = {
       ...ngo,
@@ -560,7 +559,7 @@ const NGOForm = () => {
       // Add file from ref (not from Redux)
       registrationCertificate: registrationCertFileRef.current,
     };
-    
+
     // Update Redux with latest latitude/longitude if they exist
     if (latitude) {
       dispatch(updateNGO({ field: "latitude", value: latitude }));
@@ -568,7 +567,7 @@ const NGOForm = () => {
     if (longitude) {
       dispatch(updateNGO({ field: "longitude", value: longitude }));
     }
-    
+
     // Send to backend through Redux thunk
     const result = await dispatch(
       submitRegistration({ role: "NGO", data: formData })
@@ -580,7 +579,7 @@ const NGOForm = () => {
         result.payload?.data?.message ||
         "Registration successful! Redirecting to login...";
       toast.success(successMessage);
-      
+
       setTimeout(() => {
         navigate("/login");
       }, 1500);
@@ -604,7 +603,7 @@ const NGOForm = () => {
   // Reusable component for file upload fields - PDF only
   const FileUploadField = ({ label, id, field, disabled = false, errors, touched }) => {
     const fileInputRef = useRef(null);
-    
+
     const handleFileInputChange = (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -616,7 +615,7 @@ const NGOForm = () => {
           }
           return;
         }
-        
+
         // Validate file size (max 5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB in bytes
         if (file.size > maxSize) {
@@ -626,7 +625,7 @@ const NGOForm = () => {
           }
           return;
         }
-        
+
         if (field) {
           handleFileChange(field, file);
           toast.success(`File selected: ${file.name}`);
@@ -639,19 +638,19 @@ const NGOForm = () => {
         }
       }
     };
-    
+
     // Get filename from Redux for display
     const filename = ngo.registrationCertificateFilename || "";
-    
+
     return (
-    <div className="flex flex-col">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
+      <div className="flex flex-col">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
           {label} <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(PDF only, max 5MB)</span>
-      </label>
+        </label>
         <div className="relative">
-      <input
-        type="file"
-        id={id}
+          <input
+            type="file"
+            id={id}
             ref={fileInputRef}
             onChange={handleFileInputChange}
             disabled={disabled || isLoading}
@@ -661,10 +660,9 @@ const NGOForm = () => {
           file:rounded-md file:border-0
           file:text-sm file:font-semibold
           file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100 border border-gray-300 rounded-md shadow-sm ${
-                disabled || isLoading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+              hover:file:bg-blue-100 border border-gray-300 rounded-md shadow-sm ${disabled || isLoading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
               }`}
-      />
+          />
         </div>
         {filename ? (
           <div className="mt-1 flex items-center gap-1">
@@ -679,8 +677,8 @@ const NGOForm = () => {
         {touched && errors && (
           <span className="text-red-500 text-sm mt-1">{errors}</span>
         )}
-    </div>
-  );
+      </div>
+    );
   };
 
   // Reusable component for select dropdowns
@@ -690,11 +688,11 @@ const NGOForm = () => {
     const handleChange = (e) => {
       // Save scroll position before change
       scrollPositionRef.current = window.scrollY;
-      
+
       if (onChange) {
         onChange(e.target.value);
       }
-      
+
       // Restore scroll position after change
       setTimeout(() => {
         window.scrollTo({
@@ -709,14 +707,14 @@ const NGOForm = () => {
     };
 
     return (
-    <div className="flex flex-col">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <div className="relative">
-        <select
+      <div className="flex flex-col">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700 mb-1">
+          {label}
+        </label>
+        <div className="relative">
+          <select
             ref={selectRef}
-          id={id}
+            id={id}
             value={value || ""}
             onChange={handleChange}
             onBlur={onBlur}
@@ -725,36 +723,35 @@ const NGOForm = () => {
               // Prevent scroll on focus
               e.target.scrollIntoView({ behavior: "instant", block: "nearest" });
             }}
-            className={`block w-full pl-3 pr-10 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-1 rounded-md shadow-sm border appearance-none ${
-              disabled || isLoading
+            className={`block w-full pl-3 pr-10 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-1 rounded-md shadow-sm border appearance-none ${disabled || isLoading
                 ? "bg-gray-100 cursor-not-allowed opacity-60"
                 : "cursor-pointer focus:ring-blue-500 focus:border-blue-500"
-            }`}
-        >
-          <option value="">{`Select ${label.split(" ")[0]}`}</option>
+              }`}
+          >
+            <option value="">{`Select ${label.split(" ")[0]}`}</option>
             {options.map((option) => (
               <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-          <svg
-            className="h-5 w-5"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg
+              className="h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
   };
 
   const ngoTypeOptions = [
@@ -778,10 +775,10 @@ const NGOForm = () => {
           disabled={isLoading}
         />
         <div className="flex flex-col">
-        <SelectField
-          label="Type of NGO"
-          id="ngo-type"
-          options={ngoTypeOptions}
+          <SelectField
+            label="Type of NGO"
+            id="ngo-type"
+            options={ngoTypeOptions}
             value={selectedNgoType || ngo.ngoType || ""}
             onChange={(value) => {
               setSelectedNgoType(value);
@@ -799,9 +796,9 @@ const NGOForm = () => {
         </div>
 
         <InputField
-          label="Registration Number"
+          label="Registration Number (Enrollment ID)"
           id="reg-number"
-          placeholder="Registration Number"
+          placeholder="Registration Number (Enrollment ID)"
           value={ngo.registrationNumber}
           onChange={(e) => handleChange("registrationNumber", e.target.value)}
           onBlur={() => handleBlur("registrationNumber")}
@@ -857,7 +854,7 @@ const NGOForm = () => {
           required
           disabled={isLoading}
         />
-        
+
         {/* State, District, City - Cascading dropdowns */}
         <div className="flex flex-col">
           <SelectField
@@ -1032,13 +1029,12 @@ const NGOForm = () => {
                 }}
                 onBlur={() => handleBlur("latitude")}
                 disabled={isLoading}
-                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
-                  isLoading
+                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${isLoading
                     ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-300"
                     : touched.latitude && errors.latitude
-                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                }`}
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  }`}
               />
               {touched.latitude && errors.latitude && (
                 <span className="text-red-500 text-sm mt-1">{errors.latitude}</span>
@@ -1073,20 +1069,19 @@ const NGOForm = () => {
                 }}
                 onBlur={() => handleBlur("longitude")}
                 disabled={isLoading}
-                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
-                  isLoading
+                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${isLoading
                     ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-300"
                     : touched.longitude && errors.longitude
-                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                }`}
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  }`}
               />
               {touched.longitude && errors.longitude && (
                 <span className="text-red-500 text-sm mt-1">{errors.longitude}</span>
               )}
             </div>
           </div>
-          
+
           {/* Google Maps Preview */}
           {latitude && longitude && isLatitudeValid(latitude) && isLongitudeValid(longitude) && (
             <div className="mt-4">

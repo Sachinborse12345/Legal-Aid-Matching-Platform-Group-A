@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { 
-  fetchDraftCase, 
-  saveStepData, 
-  submitCaseData, 
-  startNewCaseAction, 
-  updateForm, 
+import {
+  fetchDraftCase,
+  saveStepData,
+  submitCaseData,
+  startNewCaseAction,
+  updateForm,
   setStep as setStepAction,
-  setSaveStatus 
+  setSaveStatus
 } from "../../Redux/caseSlice";
 
 /* ---------------- STEPS ---------------- */
@@ -163,7 +163,7 @@ export default function CaseFilingForm() {
 
     const stepData = getStepData(step);
     const result = await dispatch(saveStepData({ step, stepData, caseId }));
-    
+
     if (saveStepData.fulfilled.match(result)) {
       toast.success("Step saved successfully!");
     }
@@ -178,7 +178,7 @@ export default function CaseFilingForm() {
     }
 
     const result = await dispatch(submitCaseData({ caseId, documents: form.documents }));
-    
+
     if (submitCaseData.fulfilled.match(result)) {
       if (result.payload.uploadErrors && result.payload.uploadErrors.length > 0) {
         toast.warn("Some files failed to upload: " + result.payload.uploadErrors.join(", "));
@@ -203,7 +203,7 @@ export default function CaseFilingForm() {
               based on urgency, location, and legal requirement.
             </p>
           </div>
-          
+
         </div>
         {saveStatus && (
           <p className="mt-4 text-white text-sm">{saveStatus}</p>
@@ -215,11 +215,10 @@ export default function CaseFilingForm() {
         {STEPS.map((s, i) => (
           <div key={i} className="text-center w-16 md:w-auto md:flex-1">
             <div
-              className={`mx-auto w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center border-2 font-semibold text-sm md:text-base ${
-                i <= step
+              className={`mx-auto w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center border-2 font-semibold text-sm md:text-base ${i <= step
                   ? "bg-[#234f4a] border-[#234f4a] text-white"
                   : "border-gray-300 text-gray-400"
-              }`}
+                }`}
             >
               {i + 1}
             </div>
@@ -532,30 +531,49 @@ export default function CaseFilingForm() {
                   const maxSize = 2 * 1024 * 1024; // 2MB
                   const validFiles = [];
                   const errors = [];
-                  
+
                   files.forEach(file => {
                     if (file.type !== "application/pdf") {
                       errors.push(`${file.name}: Only PDF files are allowed`);
                     } else if (file.size > maxSize) {
                       errors.push(`${file.name}: exceeds 2MB limit`);
+                    } else if (form.documents.some(d => d.name === file.name && d.size === file.size)) {
+                      errors.push(`${file.name}: already added`);
                     } else {
                       validFiles.push(file);
                     }
                   });
-                  
+
                   if (errors.length > 0) {
-                    toast.error("Some files were rejected: " + errors.join(", "));
+                    toast.error("Some files were skipped: " + errors.join(", "));
                   }
-                  handle("documents", validFiles);
+
+                  if (validFiles.length > 0) {
+                    handle("documents", [...form.documents, ...validFiles]);
+                  }
+
+                  // Reset input value to allow selecting the same file again if needed after removal
+                  e.target.value = '';
                 }}
               />
-              
+
               {form.documents.length > 0 && (
                 <div className="mb-4 text-sm text-gray-600">
-                  <p className="font-medium">Selected files:</p>
-                  <ul className="list-disc pl-5">
+                  <p className="font-medium mb-2">Selected files:</p>
+                  <ul className="space-y-2">
                     {form.documents.map((file, idx) => (
-                      <li key={idx}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
+                      <li key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
+                        <span className="truncate max-w-[80%]">{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <button
+                          onClick={() => {
+                            const newDocs = form.documents.filter((_, i) => i !== idx);
+                            handle("documents", newDocs);
+                          }}
+                          className="text-red-500 hover:text-red-700 font-medium text-xs px-2 py-1 rounded border border-red-200 hover:bg-red-50"
+                        >
+                          Remove
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 </div>

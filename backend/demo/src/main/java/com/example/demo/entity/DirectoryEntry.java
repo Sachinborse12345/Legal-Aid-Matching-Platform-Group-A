@@ -1,7 +1,7 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "directory_entries")
@@ -9,45 +9,59 @@ public class DirectoryEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
+    // Common fields
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 30, nullable = false)
-    private String type;   // NGO / LAWYER
+    @Column(nullable = false)
+    private String type; // "LAWYER" or "NGO"
+
+    @Column(nullable = false)
+    private String source; // "BAR_COUNCIL", "NGO_DARPAN", etc.
+
+    @Column(name = "registration_number")
+    private String registrationNumber;
 
     private String specialization;
+
+    private String barCouncilId; // for lawyers; null for NGOs
+
+    private String contactPhone;
+    private String contactEmail;
+
+    private String country;
     private String state;
     private String district;
     private String city;
-    private String country;
 
-    private String contactEmail;
-    private String contactPhone;
+    // NEW: verified flag, not null, defaults to false
+    @Column(nullable = false)
+    private boolean verified = false;
 
-    @Column(length = 50, nullable = false)
-    private String source;
+    private Integer experienceYears;
 
-    private Instant createdAt;
-    private Instant updatedAt;
+    @Column(nullable = false)
+    private boolean approved = false; // Sync with User entity isApproved
 
-    @PrePersist
-    protected void onCreate() {
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
+    private Double latitude;
+    private Double longitude;
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = Instant.now();
-    }
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    // ---------- GETTERS & SETTERS ----------
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
-    public Long getId() {
+    // Getters and setters
+
+    public Integer getId() {
         return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -66,12 +80,60 @@ public class DirectoryEntry {
         this.type = type;
     }
 
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getRegistrationNumber() {
+        return registrationNumber;
+    }
+
+    public void setRegistrationNumber(String registrationNumber) {
+        this.registrationNumber = registrationNumber;
+    }
+
     public String getSpecialization() {
         return specialization;
     }
 
     public void setSpecialization(String specialization) {
         this.specialization = specialization;
+    }
+
+    public String getBarCouncilId() {
+        return barCouncilId;
+    }
+
+    public void setBarCouncilId(String barCouncilId) {
+        this.barCouncilId = barCouncilId;
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public String getState() {
@@ -98,35 +160,59 @@ public class DirectoryEntry {
         this.city = city;
     }
 
-    public String getCountry() {
-        return country;
+    public boolean isVerified() {
+        return verified;
     }
 
-    public void setCountry(String country) {
-        this.country = country;
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 
-    public String getContactEmail() {
-        return contactEmail;
+    public Double getLatitude() {
+        return latitude;
     }
 
-    public void setContactEmail(String contactEmail) {
-        this.contactEmail = contactEmail;
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
     }
 
-    public String getContactPhone() {
-        return contactPhone;
+    public Double getLongitude() {
+        return longitude;
     }
 
-    public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 
-    public String getSource() {
-        return source;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setSource(String source) {
-        this.source = source;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Integer getExperienceYears() {
+        return experienceYears;
+    }
+
+    public void setExperienceYears(Integer experienceYears) {
+        this.experienceYears = experienceYears;
+    }
+
+    public boolean isApproved() {
+        return approved;
+    }
+
+    public void setApproved(boolean approved) {
+        this.approved = approved;
     }
 }

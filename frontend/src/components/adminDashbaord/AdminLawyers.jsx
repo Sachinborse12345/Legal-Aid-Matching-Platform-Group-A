@@ -1,31 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiSearch, FiUser, FiMapPin, FiBriefcase } from "react-icons/fi";
+import axios from "axios";
 
 export default function AdminLawyers() {
-  const [lawyers] = useState([
-    {
-      id: 1,
-      name: "Adv. Ramesh Kumar",
-      email: "ramesh@example.com",
-      specialization: "Property Law",
-      location: "Pune, Maharashtra",
-      status: "Verified",
-    },
-    {
-      id: 2,
-      name: "Adv. Priya Sharma",
-      email: "priya@example.com",
-      specialization: "Criminal Law",
-      location: "Mumbai, Maharashtra",
-      status: "Verified",
-    },
-  ]);
-
+  const [lawyers, setLawyers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLawyer, setSelectedLawyer] = useState(null);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [pageSize] = useState(10);
+
+  useEffect(() => {
+    fetchLawyers();
+  }, [page]);
+
+  const fetchLawyers = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/lawyers", {
+        params: { page, size: pageSize }
+      });
+      // Assuming backend returns paginated response
+      if (response.data.content) {
+        setLawyers(response.data.content);
+        setTotalPages(response.data.totalPages);
+      } else {
+        // Fallback for non-paginated response
+        setLawyers(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching lawyers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await axios.put(`http://localhost:8080/api/lawyers/${id}/approve`);
+      // Update local state
+      setLawyers(lawyers.map(l => l.id === id ? { ...l, isApproved: true } : l));
+    } catch (error) {
+      console.error("Approval failed:", error);
+      alert("Failed to approve lawyer");
+    }
+  };
 
   const filteredLawyers = lawyers.filter(
     (l) =>
-      l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       l.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       l.specialization.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -47,7 +70,9 @@ export default function AdminLawyers() {
           </div>
         </div>
 
-        {filteredLawyers.length === 0 ? (
+        {loading ? (
+          <p className="text-gray-500 text-center py-8">Loading lawyers...</p>
+        ) : filteredLawyers.length === 0 ? (
           <p className="text-gray-500 text-center py-8">No lawyers found</p>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
@@ -61,7 +86,25 @@ export default function AdminLawyers() {
                     <FiUser className="w-6 h-6 text-[#4B227A]" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1">{lawyer.name}</h3>
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-semibold text-lg mb-1">{lawyer.fullName}</h3>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedLawyer(lawyer)}
+                          className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                        >
+                          View Details
+                        </button>
+                        {!lawyer.isApproved && (
+                          <button
+                            onClick={() => handleApprove(lawyer.id)}
+                            className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                          >
+                            Approve
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     <p className="text-sm text-gray-600 mb-2">{lawyer.email}</p>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
                       <FiBriefcase className="w-4 h-4" />
@@ -69,18 +112,158 @@ export default function AdminLawyers() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                       <FiMapPin className="w-4 h-4" />
-                      <span>{lawyer.location}</span>
+                      <span>{`${lawyer.city}, ${lawyer.state}`}</span>
                     </div>
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
-                      {lawyer.status}
-                    </span>
+                    {lawyer.verificationStatus && (
+                      <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700">
+                        Verified
+                      </span>
+                    )}
+                    {lawyer.isApproved ? (
+                      <span className="ml-2 px-2 py-1 rounded text-xs bg-blue-50 text-blue-600 border border-blue-200">
+                        Approved
+                      </span>
+                    ) : (
+                      <span className="ml-2 px-2 py-1 rounded text-xs bg-gray-100 text-gray-600 border border-gray-200">
+                        Pending Approval
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <button
+              disabled={page === 0}
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              className="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50 flex items-center gap-2"
+            >
+              ← Previous
+            </button>
+
+            <span className="text-sm font-medium text-gray-600">
+              Page {page + 1} of {totalPages}
+            </span>
+
+            <button
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              className="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50 flex items-center gap-2"
+            >
+              Next →
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Lawyer Details Modal */}
+      {selectedLawyer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-2xl font-bold text-[#4B227A]">Lawyer Details</h2>
+              <button
+                onClick={() => setSelectedLawyer(null)}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <FiUser className="w-6 h-6 text-gray-500 transform rotate-45" /> {/* Using FiUser as close icon placeholder if FiX not imported yet, wait I should use X */}
+                <span className="text-xl font-bold">&times;</span>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-500">Full Name</label>
+                  <p className="font-semibold">{selectedLawyer.fullName}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Email</label>
+                  <p className="font-semibold">{selectedLawyer.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Mobile Number</label>
+                  <p className="font-semibold">{selectedLawyer.mobileNum || "N/A"}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-500">Verification Status</label>
+                  <label className="text-sm text-gray-500">Verification Status</label>
+                  <div>
+                    {selectedLawyer.verificationStatus && (
+                      <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700 mr-2">
+                        Verified
+                      </span>
+                    )}
+
+                    {selectedLawyer.isApproved ? (
+                      <span className="px-2 py-1 rounded text-xs bg-blue-50 text-blue-600 border border-blue-200">
+                        Approved
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-600 border border-gray-200">
+                        Pending Approval
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold text-lg mb-3">Professional Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-500">Bar Council ID</label>
+                    <p className="font-semibold">{selectedLawyer.barCouncilId || "N/A"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">Bar State</label>
+                    <p className="font-semibold">{selectedLawyer.barState || "N/A"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">Specialization</label>
+                    <p className="font-semibold">{selectedLawyer.specialization}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">Experience</label>
+                    <p className="font-semibold">{selectedLawyer.experienceYears ? `${selectedLawyer.experienceYears} Years` : "N/A"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold text-lg mb-3">Address</h3>
+                <p className="text-gray-700">{selectedLawyer.address}</p>
+                <p className="text-gray-700">{`${selectedLawyer.city}, ${selectedLawyer.district}, ${selectedLawyer.state}`}</p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+                <button
+                  onClick={() => setSelectedLawyer(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                {!selectedLawyer.isApproved && (
+                  <button
+                    onClick={() => {
+                      handleApprove(selectedLawyer.id);
+                      setSelectedLawyer(null);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Approve Lawyer
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

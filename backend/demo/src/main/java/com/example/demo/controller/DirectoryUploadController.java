@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/admin/directory")
+@RequestMapping("/api/directory")
+@CrossOrigin(origins = "http://localhost:5173")
 public class DirectoryUploadController {
 
     private final DirectoryService directoryService;

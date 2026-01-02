@@ -58,13 +58,12 @@ const InputField = ({
         onChange={handleInputChange}
         onBlur={onBlur}
         disabled={disabled || isLoading}
-        className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
-          disabled || isLoading
+        className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${disabled || isLoading
             ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-300"
             : showError
-            ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-            : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-        }`}
+              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+          }`}
       />
       {showError && <span className="text-red-500 text-sm mt-1">{error}</span>}
     </div>
@@ -129,9 +128,9 @@ const LawyerForm = () => {
     // Convert array of district objects to options
     return Array.isArray(districts)
       ? districts.map((district) => ({
-          label: district.label || district.value,
-          value: district.value,
-        }))
+        label: district.label || district.value,
+        value: district.value,
+      }))
       : [];
   }, [selectedState, selectedStateObj]);
 
@@ -890,10 +889,9 @@ const LawyerForm = () => {
           file:rounded-md file:border-0
           file:text-sm file:font-semibold
           file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100 border border-gray-300 rounded-md shadow-sm ${
-                disabled || isLoading
-                  ? "cursor-not-allowed opacity-60"
-                  : "cursor-pointer"
+              hover:file:bg-blue-100 border border-gray-300 rounded-md shadow-sm ${disabled || isLoading
+                ? "cursor-not-allowed opacity-60"
+                : "cursor-pointer"
               }`}
           />
         </div>
@@ -971,11 +969,10 @@ const LawyerForm = () => {
                 block: "nearest",
               });
             }}
-            className={`block w-full pl-3 pr-10 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-1 rounded-md shadow-sm border appearance-none ${
-              disabled || isLoading
+            className={`block w-full pl-3 pr-10 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-1 rounded-md shadow-sm border appearance-none ${disabled || isLoading
                 ? "bg-gray-100 cursor-not-allowed opacity-60"
                 : "cursor-pointer focus:ring-blue-500 focus:border-blue-500"
-            }`}
+              }`}
           >
             <option value="">{`Select ${label.split(" ")[0]}`}</option>
             {options.map((option) => (
@@ -1077,9 +1074,9 @@ const LawyerForm = () => {
           touched={touched}
         />
         <InputField
-          label="Bar Council Enrollment Number"
+          label="Bar Council ID (Enrollment Number/ID)"
           id="bar-council-id"
-          placeholder="Bar Council ID"
+          placeholder="Bar Council ID (Enrollment Number/ID)"
           field="barId"
           lawyer={lawyer}
           isLoading={isLoading}
@@ -1226,13 +1223,12 @@ const LawyerForm = () => {
             }}
             onBlur={() => handleBlur("address")}
             disabled={isLoading}
-            className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
-              isLoading
+            className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${isLoading
                 ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-300"
                 : touched.address && errors.address
-                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            }`}
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              }`}
           />
           {touched.address && errors.address && (
             <span className="text-red-500 text-sm mt-1 block">
@@ -1409,13 +1405,12 @@ const LawyerForm = () => {
                 }}
                 onBlur={() => handleBlur("latitude")}
                 disabled={isLoading}
-                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
-                  isLoading
+                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${isLoading
                     ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-300"
                     : touched.latitude && errors.latitude
-                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                }`}
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  }`}
               />
               {touched.latitude && errors.latitude && (
                 <span className="text-red-500 text-sm mt-1">
@@ -1452,13 +1447,12 @@ const LawyerForm = () => {
                 }}
                 onBlur={() => handleBlur("longitude")}
                 disabled={isLoading}
-                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
-                  isLoading
+                className={`block w-full rounded-md border px-3 py-2.5 sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${isLoading
                     ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-300"
                     : touched.longitude && errors.longitude
-                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                }`}
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  }`}
               />
               {touched.longitude && errors.longitude && (
                 <span className="text-red-500 text-sm mt-1">

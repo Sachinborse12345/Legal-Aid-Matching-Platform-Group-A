@@ -10,18 +10,21 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 @Service
-public class NGODarpanImportService {
+public class BarCouncilImportService {
 
     private final DirectoryEntryRepository directoryEntryRepository;
+    private final com.example.demo.repository.LawyerRepository lawyerRepository;
 
-    public NGODarpanImportService(DirectoryEntryRepository directoryEntryRepository) {
+    public BarCouncilImportService(DirectoryEntryRepository directoryEntryRepository,
+            com.example.demo.repository.LawyerRepository lawyerRepository) {
         this.directoryEntryRepository = directoryEntryRepository;
+        this.lawyerRepository = lawyerRepository;
     }
 
     /**
-     * Import NGOs from a CSV file on the classpath.
+     * Import Lawyers from a CSV file on the classpath (simulating Bar Council DB).
      * Expected header:
-     * registrationNumber,name,state,district,specialization,contactPhone
+     * barCouncilId,name,state,district,specialization,year
      */
     public void importCSV(String filename) {
         try {
@@ -44,39 +47,52 @@ public class NGODarpanImportService {
                         continue;
                     }
 
-                    String[] parts = line.split(",", -1); // keep empty columns
+                    String[] parts = line.split(",", -1);
 
                     // Guard if the row is shorter than expected
-                    if (parts.length < 6) {
+                    if (parts.length < 5) {
                         continue;
                     }
 
-                    String registrationNumber = parts[0].trim().toUpperCase();
+                    String barCouncilId = parts[0].trim().toUpperCase();
                     String name = parts[1].trim();
                     String state = parts[2].trim();
                     String district = parts[3].trim();
                     String specialization = parts[4].trim();
-                    String contactPhone = parts[5].trim();
+                    // year is parts[5] if needed
 
-                    DirectoryEntry entry = new DirectoryEntry();
-                    entry.setType("NGO");
-                    entry.setSource("NGO_DARPAN");
-                    entry.setRegistrationNumber(registrationNumber);
+                    // Update existing or create new
+                    DirectoryEntry entry = directoryEntryRepository.findByTypeAndBarCouncilId("LAWYER", barCouncilId);
+                    if (entry == null) {
+                        entry = new DirectoryEntry();
+                        entry.setType("LAWYER");
+                        entry.setBarCouncilId(barCouncilId);
+                    }
+
+                    entry.setSource("BAR_COUNCIL");
                     entry.setName(name);
                     entry.setState(state);
                     entry.setDistrict(district);
                     entry.setSpecialization(specialization);
-                    entry.setContactPhone(contactPhone);
-
-                    // Imported entries are verified and pre-approved (authoritative source)
                     entry.setVerified(true);
                     entry.setApproved(true);
 
                     directoryEntryRepository.save(entry);
+
+                    // Update existing lawyers who match this ID
+                    java.util.List<com.example.demo.entity.Lawyer> matchingLawyers = lawyerRepository.findAll();
+                    // Inefficient but safe for now - better to have findByBarCouncilId in repo
+                    // Assuming findAll is okay for small demo
+                    for (com.example.demo.entity.Lawyer lawyer : matchingLawyers) {
+                        if (barCouncilId.equalsIgnoreCase(lawyer.getBarCouncilId())) {
+                            lawyer.setVerificationStatus(true);
+                            lawyerRepository.save(lawyer);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to import NGO Darpan CSV", e);
+            throw new RuntimeException("Failed to import Bar Council CSV", e);
         }
     }
 }

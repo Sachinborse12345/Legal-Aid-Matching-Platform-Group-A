@@ -14,22 +14,23 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/cases")
-@CrossOrigin(
-        origins = "http://localhost:5173",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
-)
+@CrossOrigin(origins = "http://localhost:5173", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
+        RequestMethod.DELETE, RequestMethod.OPTIONS })
 public class CaseController {
 
     private final CaseRepository caseRepository;
     private final JwtUtil jwtUtil;
     private final CloudinaryService cloudinaryService;
+    private final com.example.demo.service.MatchingService matchingService;
 
     private static final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
-    public CaseController(CaseRepository caseRepository, JwtUtil jwtUtil, CloudinaryService cloudinaryService) {
+    public CaseController(CaseRepository caseRepository, JwtUtil jwtUtil, CloudinaryService cloudinaryService,
+            com.example.demo.service.MatchingService matchingService) {
         this.caseRepository = caseRepository;
         this.jwtUtil = jwtUtil;
         this.cloudinaryService = cloudinaryService;
+        this.matchingService = matchingService;
     }
 
     // Extract userId from JWT token
@@ -70,12 +71,12 @@ public class CaseController {
             }
 
             Integer step = (Integer) requestData.get("step");
-            Long caseId = requestData.get("caseId") != null ?
-                    Long.valueOf(requestData.get("caseId").toString()) : null;
+            Long caseId = requestData.get("caseId") != null ? Long.valueOf(requestData.get("caseId").toString()) : null;
 
             Case caseEntity;
 
-            // If caseId provided, update that case; otherwise find latest draft or create new
+            // If caseId provided, update that case; otherwise find latest draft or create
+            // new
             if (caseId != null) {
                 Optional<Case> existingCase = caseRepository.findByIdAndCitizenId(caseId, citizenId);
                 if (existingCase.isEmpty()) {
@@ -84,7 +85,8 @@ public class CaseController {
                 caseEntity = existingCase.get();
             } else {
                 // Find latest draft case for this user or create new
-                Optional<Case> draftCase = caseRepository.findFirstByCitizenIdAndIsSubmittedFalseOrderByUpdatedAtDesc(citizenId);
+                Optional<Case> draftCase = caseRepository
+                        .findFirstByCitizenIdAndIsSubmittedFalseOrderByUpdatedAtDesc(citizenId);
                 caseEntity = draftCase.orElseGet(() -> {
                     Case newCase = new Case();
                     newCase.setCitizenId(citizenId);
@@ -123,8 +125,7 @@ public class CaseController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
             }
 
-            Long caseId = requestData.get("caseId") != null ?
-                    Long.valueOf(requestData.get("caseId").toString()) : null;
+            Long caseId = requestData.get("caseId") != null ? Long.valueOf(requestData.get("caseId").toString()) : null;
 
             Case caseEntity;
             if (caseId != null) {
@@ -134,7 +135,8 @@ public class CaseController {
                 }
                 caseEntity = existingCase.get();
             } else {
-                Optional<Case> draftCase = caseRepository.findFirstByCitizenIdAndIsSubmittedFalseOrderByUpdatedAtDesc(citizenId);
+                Optional<Case> draftCase = caseRepository
+                        .findFirstByCitizenIdAndIsSubmittedFalseOrderByUpdatedAtDesc(citizenId);
                 if (draftCase.isEmpty()) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No draft case found");
                 }
@@ -187,7 +189,8 @@ public class CaseController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
             }
 
-            Optional<Case> draftCase = caseRepository.findFirstByCitizenIdAndIsSubmittedFalseOrderByUpdatedAtDesc(citizenId);
+            Optional<Case> draftCase = caseRepository
+                    .findFirstByCitizenIdAndIsSubmittedFalseOrderByUpdatedAtDesc(citizenId);
             if (draftCase.isEmpty()) {
                 return ResponseEntity.ok(null);
             }
@@ -256,6 +259,41 @@ public class CaseController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching case: " + e.getMessage());
+        }
+    }
+
+    // Get matched lawyers and NGOs for a case
+    @GetMapping("/{id}/matches")
+    public ResponseEntity<?> getMatches(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id) {
+        try {
+            Integer userId = extractUserId(authHeader);
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+
+            // Check if user has access to this case (own citizenId OR admin/provider)
+            Optional<Case> caseEntity = caseRepository.findById(id);
+            if (caseEntity.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Case not found");
+            }
+
+            // Simple security: for now, only the citizen who created the case can view
+            // matches
+            // (Or we can allow matched providers to view later if needed)
+            if (!caseEntity.get().getCitizenId().equals(userId)) {
+                // Check if it's an admin
+                String role = extractUserRole(authHeader);
+                if (!"ADMIN".equalsIgnoreCase(role)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+                }
+            }
+
+            return ResponseEntity.ok(matchingService.findMatchesForCase(id));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching matches: " + e.getMessage());
         }
     }
 
@@ -365,38 +403,58 @@ public class CaseController {
     private void updateCaseFields(Case caseEntity, Integer step, Map<String, Object> data) {
         switch (step) {
             case 0: // Applicant Details
-                if (data.get("applicantName") != null) caseEntity.setApplicantName(data.get("applicantName").toString());
-                if (data.get("email") != null) caseEntity.setEmail(data.get("email").toString());
-                if (data.get("mobile") != null) caseEntity.setMobile(data.get("mobile").toString());
-                if (data.get("aadhaar") != null) caseEntity.setAadhaar(data.get("aadhaar").toString());
+                if (data.get("applicantName") != null)
+                    caseEntity.setApplicantName(data.get("applicantName").toString());
+                if (data.get("email") != null)
+                    caseEntity.setEmail(data.get("email").toString());
+                if (data.get("mobile") != null)
+                    caseEntity.setMobile(data.get("mobile").toString());
+                if (data.get("aadhaar") != null)
+                    caseEntity.setAadhaar(data.get("aadhaar").toString());
                 break;
             case 1: // Victim Details
-                if (data.get("victimName") != null) caseEntity.setVictimName(data.get("victimName").toString());
-                if (data.get("relation") != null) caseEntity.setRelation(data.get("relation").toString());
-                if (data.get("victimGender") != null) caseEntity.setVictimGender(data.get("victimGender").toString());
-                if (data.get("victimAge") != null) caseEntity.setVictimAge(Integer.valueOf(data.get("victimAge").toString()));
+                if (data.get("victimName") != null)
+                    caseEntity.setVictimName(data.get("victimName").toString());
+                if (data.get("relation") != null)
+                    caseEntity.setRelation(data.get("relation").toString());
+                if (data.get("victimGender") != null)
+                    caseEntity.setVictimGender(data.get("victimGender").toString());
+                if (data.get("victimAge") != null)
+                    caseEntity.setVictimAge(Integer.valueOf(data.get("victimAge").toString()));
                 break;
             case 2: // Case Details
-                if (data.get("caseTitle") != null) caseEntity.setCaseTitle(data.get("caseTitle").toString());
-                if (data.get("caseType") != null) caseEntity.setCaseType(data.get("caseType").toString());
+                if (data.get("caseTitle") != null)
+                    caseEntity.setCaseTitle(data.get("caseTitle").toString());
+                if (data.get("caseType") != null)
+                    caseEntity.setCaseType(data.get("caseType").toString());
                 break;
             case 3: // Incident Details
-                if (data.get("incidentDate") != null) caseEntity.setIncidentDate(LocalDate.parse(data.get("incidentDate").toString()));
-                if (data.get("incidentPlace") != null) caseEntity.setIncidentPlace(data.get("incidentPlace").toString());
-                if (data.get("urgency") != null) caseEntity.setUrgency(data.get("urgency").toString());
+                if (data.get("incidentDate") != null)
+                    caseEntity.setIncidentDate(LocalDate.parse(data.get("incidentDate").toString()));
+                if (data.get("incidentPlace") != null)
+                    caseEntity.setIncidentPlace(data.get("incidentPlace").toString());
+                if (data.get("urgency") != null)
+                    caseEntity.setUrgency(data.get("urgency").toString());
                 break;
             case 4: // Legal Preference
-                if (data.get("specialization") != null) caseEntity.setSpecialization(data.get("specialization").toString());
-                if (data.get("courtType") != null) caseEntity.setCourtType(data.get("courtType").toString());
-                if (data.get("seekingNgoHelp") != null) caseEntity.setSeekingNgoHelp(data.get("seekingNgoHelp").toString());
-                if (data.get("ngoType") != null) caseEntity.setNgoType(data.get("ngoType").toString());
+                if (data.get("specialization") != null)
+                    caseEntity.setSpecialization(data.get("specialization").toString());
+                if (data.get("courtType") != null)
+                    caseEntity.setCourtType(data.get("courtType").toString());
+                if (data.get("seekingNgoHelp") != null)
+                    caseEntity.setSeekingNgoHelp(data.get("seekingNgoHelp").toString());
+                if (data.get("ngoType") != null)
+                    caseEntity.setNgoType(data.get("ngoType").toString());
                 break;
             case 5: // Case Explanation
-                if (data.get("background") != null) caseEntity.setBackground(data.get("background").toString());
-                if (data.get("relief") != null) caseEntity.setRelief(data.get("relief").toString());
+                if (data.get("background") != null)
+                    caseEntity.setBackground(data.get("background").toString());
+                if (data.get("relief") != null)
+                    caseEntity.setRelief(data.get("relief").toString());
                 break;
             case 6: // Documents
-                if (data.get("documentsUrl") != null) caseEntity.setDocumentsUrl(data.get("documentsUrl").toString());
+                if (data.get("documentsUrl") != null)
+                    caseEntity.setDocumentsUrl(data.get("documentsUrl").toString());
                 break;
         }
     }

@@ -229,6 +229,8 @@ public class AuthController {
         data.put("latitude", lawyer.getLatitude());
         data.put("longitude", lawyer.getLongitude());
         data.put("createdAt", lawyer.getCreatedAt() != null ? lawyer.getCreatedAt().toString() : null);
+        data.put("verificationStatus", lawyer.isVerificationStatus());
+        data.put("isApproved", lawyer.isApproved());
         return data;
     }
 
@@ -251,6 +253,8 @@ public class AuthController {
         data.put("latitude", ngo.getLatitude());
         data.put("longitude", ngo.getLongitude());
         data.put("createdAt", ngo.getCreatedAt() != null ? ngo.getCreatedAt().toString() : null);
+        data.put("verificationStatus", ngo.isVerificationStatus());
+        data.put("isApproved", ngo.isApproved());
         return data;
     }
 
@@ -273,4 +277,3 @@ public class AuthController {
         return data;
     }
 }
-

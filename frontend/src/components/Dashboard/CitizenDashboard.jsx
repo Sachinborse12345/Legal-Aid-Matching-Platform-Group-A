@@ -1,57 +1,39 @@
 // CitizenDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import axios from "axios";
+
 import { fetchUserProfile } from "../../Redux/authSlice.js";
 import CitizenSidebar from "./CitizenSidebar.jsx";
 import CitizenOverview from "./CitizenOverview.jsx";
 import CitizenAddCase from "./CitizenAddCase.jsx";
 import CitizenMyCases from "./CitizenMyCases.jsx";
 import CitizenFindLawyer from "./CitizenFindLawyer.jsx";
+// import CitizenFindNgo from "./CitizenFindNgo.jsx"; // Removed as merged into FindLawyer
 import CitizenMessages from "./CitizenMessages.jsx";
 import CitizenProfile from "./CitizenProfile.jsx";
 import CitizenSettings from "./CitizenSettings.jsx";
+import ProfileModal from "./ProfileModal.jsx"; // New Modal Import
+
+// Helper to check type
+const isLawyer = (item) => item.type === "LAWYER";
 
 export default function CitizenDashboard() {
   const dispatch = useDispatch();
-  const { profile: reduxProfile, isAuthenticated } = useSelector((state) => state.auth);
-  
-  const [activePage, setActivePage] = useState("overview"); // overview | cases | find | messages | profile | settings
+  const { profile: reduxProfile, isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
+
+  // overview | cases | findLawyer | findNgo | messages | profile | settings | addcase
+  const [activePage, setActivePage] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if device width is 500px or less
-  useEffect(() => {
-    const checkWidth = () => {
-      const width = window.innerWidth;
-      setIsMobile(width <= 700);
-      // On mobile, close sidebar by default
-      if (width <= 500) {
-        setIsSidebarOpen(false);
-      } else {
-        setIsSidebarOpen(true);
-      }
-    };
+  // directory data from backend
+  const [lawyers, setLawyers] = useState([]);
+  const [ngos, setNgos] = useState([]);
 
-    // Check on mount
-    checkWidth();
-
-    // Listen for resize events
-    window.addEventListener("resize", checkWidth);
-
-    return () => window.removeEventListener("resize", checkWidth);
-  }, []);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
-  };
-
-  // Sample data
+  // Sample cases (can later come from API)
   const [cases] = useState([
     {
       id: 1,
@@ -62,34 +44,15 @@ export default function CitizenDashboard() {
     },
   ]);
 
-  const [lawyers] = useState([
-    {
-      id: 1,
-      name: "Adv. Ramesh Sharma",
-      expertise: "Property, Civil",
-      location: "Pune",
-      contact: "ramesh@example.com",
-    },
-  ]);
-
   // Messages state
-  const [selectedRecipient, setSelectedRecipient] = useState({
-    type: "lawyer",
-    id: 1,
-    name: lawyers[0].name,
-  });
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      to: lawyers[0].name,
-      from: "Sachin",
-      text: "Hello, I want to discuss my case.",
-      time: "2025-11-01 10:00",
-    },
-  ]);
+  const [selectedRecipient, setSelectedRecipient] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
 
-  // Profile state (editable)
+  // Profile Viewer State
+  const [viewingProfile, setViewingProfile] = useState(null); // { item, type } or null
+
+  // Profile (editable)
   const [profile, setProfile] = useState({
     shortName: reduxProfile?.shortName || reduxProfile?.fullName || "",
     fullName: reduxProfile?.fullName || "",
@@ -103,31 +66,10 @@ export default function CitizenDashboard() {
     city: reduxProfile?.city || "",
     address: reduxProfile?.address || "",
     password: "",
-    photo: null, // file object
-    photoUrl: reduxProfile?.photoUrl || null, // preview URL
+    photo: null,
+    photoUrl: reduxProfile?.photoUrl || null,
   });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-
-  // Update profile from Redux when it changes (e.g., after login)
-  useEffect(() => {
-    if (reduxProfile && (reduxProfile.email || reduxProfile.fullName)) {
-      setProfile((prev) => ({
-        ...prev,
-        shortName: reduxProfile.shortName || reduxProfile.fullName || prev.shortName,
-        fullName: reduxProfile.fullName || prev.fullName,
-        role: reduxProfile.role || prev.role,
-        aadhaar: reduxProfile.aadhaar || prev.aadhaar,
-        email: reduxProfile.email || prev.email,
-        mobile: reduxProfile.mobile || prev.mobile,
-        dob: reduxProfile.dob || prev.dob,
-        state: reduxProfile.state || prev.state,
-        district: reduxProfile.district || prev.district,
-        city: reduxProfile.city || prev.city,
-        address: reduxProfile.address || prev.address,
-        photoUrl: reduxProfile.photoUrl || prev.photoUrl,
-      }));
-    }
-  }, [reduxProfile]);
 
   // Settings
   const [settings, setSettings] = useState({
@@ -136,9 +78,66 @@ export default function CitizenDashboard() {
     shareProfile: false,
   });
 
-  // Handlers
+  // Device width → mobile / desktop
+  useEffect(() => {
+    const checkWidth = () => {
+      const width = window.innerWidth;
+      setIsMobile(width <= 700);
+      if (width <= 500) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const closeSidebar = () => {
+    if (isMobile) setIsSidebarOpen(false);
+  };
+
+  // Load profile from Redux when it changes
+  useEffect(() => {
+    if (reduxProfile && (reduxProfile.email || reduxProfile.fullName)) {
+      setProfile((prev) => ({
+        ...prev,
+        ...reduxProfile,
+        shortName: reduxProfile.shortName || reduxProfile.fullName || prev.shortName,
+      }));
+    }
+  }, [reduxProfile]);
+
+  // Fetch lawyers + NGOs from backend
+  useEffect(() => {
+    const fetchLawyers = async () => {
+      try {
+        const res = await axios.get("http://localhost:8080/api/lawyers");
+        setLawyers(res.data);
+      } catch (e) {
+        console.error("Failed to load lawyers", e);
+      }
+    };
+
+    const fetchNgos = async () => {
+      try {
+        const res = await axios.get("http://localhost:8080/api/ngos");
+        setNgos(res.data);
+      } catch (e) {
+        console.error("Failed to load NGOs", e);
+      }
+    };
+
+    fetchLawyers();
+    fetchNgos();
+  }, []);
+
+  // Send message handler
   const handleSendMessage = () => {
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || !selectedRecipient) return;
     const newMsg = {
       id: messages.length + 1,
       to: selectedRecipient.name,
@@ -150,15 +149,24 @@ export default function CitizenDashboard() {
     setMessageText("");
   };
 
+  const handleCreateMessage = (recipientProfile) => {
+    // Logic from Directory to start messaging a specific person
+    setActivePage("messages");
+    setSelectedRecipient({
+      type: recipientProfile.type || (recipientProfile.role === 'LAWYER' ? 'lawyer' : 'ngo'),
+      id: recipientProfile.id,
+      name: recipientProfile.name || recipientProfile.fullName || recipientProfile.ngoName
+    });
+  };
+
   return (
     <div
-      className={`flex min-h-screen relative ${
-        settings.darkMode
-          ? "bg-gray-900 text-white"
-          : "bg-gray-100 text-gray-900"
-      }`}
+      className={`flex min-h-screen relative ${settings.darkMode
+        ? "bg-gray-900 text-white"
+        : "bg-gray-100 text-gray-900"
+        }`}
     >
-      {/* Mobile Overlay */}
+      {/* Mobile overlay */}
       {isMobile && isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -176,10 +184,9 @@ export default function CitizenDashboard() {
         isMobile={isMobile}
       />
 
-      <main className="flex-1 p-4 md:p-8">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         {/* Top bar */}
         <div className="flex justify-between items-center mb-6">
-          {/* Mobile Menu Button */}
           {isMobile && (
             <button
               onClick={toggleSidebar}
@@ -206,20 +213,22 @@ export default function CitizenDashboard() {
             {activePage === "overview"
               ? "Overview"
               : activePage === "cases"
-              ? "My Cases"
-              : activePage === "find"
-              ? "Find Lawyers"
-              : activePage === "messages"
-              ? "Messages"
-              : activePage === "profile"
-              ? "My Profile"
-              : activePage === "addcase"
-              ? "Add Your Case"
-              : "Settings"}
+                ? "My Cases"
+                : activePage === "find"
+                  ? "Find Lawyer & NGOs"
+                  : activePage === "messages"
+                    ? "Messages"
+                    : activePage === "profile"
+                      ? "My Profile"
+                      : activePage === "addcase"
+                        ? "Add Your Case"
+                        : "Settings"}
           </h1>
 
           <div className="flex items-center gap-3">
-            <div className="text-sm opacity-80 hidden sm:block">{profile.shortName || profile.fullName || "User"}</div>
+            <div className="text-sm opacity-80 hidden sm:block">
+              {profile.shortName || profile.fullName || "User"}
+            </div>
             <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-300">
               {profile.photoUrl ? (
                 <img
@@ -229,24 +238,48 @@ export default function CitizenDashboard() {
                 />
               ) : (
                 <span className="text-gray-600 font-semibold">
-                  {profile.shortName?.charAt(0) || profile.fullName?.charAt(0) || "U"}
+                  {profile.shortName?.charAt(0) ||
+                    profile.fullName?.charAt(0) ||
+                    "U"}
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <section className="space-y-6">
+        {/* Main content switch */}
+        <section className="space-y-6 pb-20">
           {activePage === "overview" && <CitizenOverview />}
+
           {activePage === "addcase" && <CitizenAddCase />}
+
           {activePage === "cases" && <CitizenMyCases cases={cases} />}
+
           {activePage === "find" && (
             <CitizenFindLawyer
-              lawyers={lawyers}
               setActivePage={setActivePage}
               setSelectedRecipient={setSelectedRecipient}
+              onViewProfile={(item, type) => {
+                // Normalize item for modal
+                setViewingProfile({
+                  ...item,
+                  type: type,
+                  name: item.name, // DirectoryEntry uses 'name', not fullName/ngoName
+                  // Map other fields if needed, but ProfileModal should handle common fields
+                  specialization: item.specialization,
+                  city: item.city,
+                  state: item.state,
+                  mobile: item.contactPhone,
+                  email: item.contactEmail,
+                  isVerified: item.verified,
+                  bio: isLawyer(item) ? "Practicing Lawyer" : "Non-Governmental Organization" // Placeholder bio if missing
+                });
+              }}
             />
           )}
+
+          {/* Removed separate FindNgo, now merged into FindLawyer */}
+
           {activePage === "messages" && (
             <CitizenMessages
               lawyers={lawyers}
@@ -259,6 +292,7 @@ export default function CitizenDashboard() {
               profile={profile}
             />
           )}
+
           {activePage === "profile" && (
             <CitizenProfile
               profile={profile}
@@ -267,11 +301,22 @@ export default function CitizenDashboard() {
               setIsEditingProfile={setIsEditingProfile}
             />
           )}
+
           {activePage === "settings" && (
             <CitizenSettings settings={settings} setSettings={setSettings} />
           )}
         </section>
       </main>
+
+      {/* Modal Layer */}
+      {viewingProfile && (
+        <ProfileModal
+          profile={viewingProfile}
+          onClose={() => setViewingProfile(null)}
+          onMessage={handleCreateMessage}
+        />
+      )}
+
     </div>
   );
 }

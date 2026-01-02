@@ -38,19 +38,19 @@ export default function CitizenSidebar({
   const profile =
     reduxProfile && (reduxProfile.email || reduxProfile.fullName)
       ? {
-          shortName:
-            reduxProfile.shortName ||
-            reduxProfile.fullName ||
-            propProfile?.shortName ||
-            "",
-          fullName: reduxProfile.fullName || propProfile?.fullName || "",
-          photoUrl: reduxProfile.photoUrl || propProfile?.photoUrl || null,
-        }
+        shortName:
+          reduxProfile.shortName ||
+          reduxProfile.fullName ||
+          propProfile?.shortName ||
+          "",
+        fullName: reduxProfile.fullName || propProfile?.fullName || "",
+        photoUrl: reduxProfile.photoUrl || propProfile?.photoUrl || null,
+      }
       : propProfile || {
-          shortName: "",
-          fullName: "",
-          photoUrl: null,
-        };
+        shortName: "",
+        fullName: "",
+        photoUrl: null,
+      };
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -69,17 +69,15 @@ export default function CitizenSidebar({
 
   return (
     <aside
-      className={`${
-        isMobile
+      className={`${isMobile
           ? "fixed top-0 left-0 h-full w-72 z-50 transform transition-transform duration-300 ease-in-out"
           : "relative w-72"
-      } ${
-        isMobile
+        } ${isMobile
           ? isOpen
             ? "translate-x-0"
             : "-translate-x-full"
           : "translate-x-0"
-      } bg-teal-900 text-white flex flex-col p-6`}
+        } bg-teal-900 text-white flex flex-col p-6`}
     >
       {/* Close Button for Mobile */}
       {isMobile && (
@@ -103,10 +101,11 @@ export default function CitizenSidebar({
           </svg>
         </button>
       )}
+
       <div className="flex items-center gap-3 pb-4 border-b border-teal-700">
         <div className="w-12 h-12 bg-white/10 rounded-md flex items-center justify-center">
           <img
-            src={appLogo} // or "../assets/LOGO.png" based on your setup
+            src={appLogo}
             alt="AdvoCare Logo"
             className="w-8 h-8 object-contain"
           />
@@ -155,9 +154,8 @@ export default function CitizenSidebar({
           <button
             key={item.key}
             onClick={() => handleNavClick(item.key)}
-            className={`w-full text-left px-3 py-3 rounded-md mb-2 transition-colors cursor-pointer ${
-              activePage === item.key ? "bg-teal-800" : "hover:bg-teal-800/60"
-            }`}
+            className={`w-full text-left px-3 py-3 rounded-md mb-2 transition-colors cursor-pointer ${activePage === item.key ? "bg-teal-800" : "hover:bg-teal-800/60"
+              }`}
           >
             {item.label}
           </button>
