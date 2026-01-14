@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/profile")
-@CrossOrigin(origins = "http://localhost:5173")
+
 public class ProfileController {
 
     @Autowired
@@ -94,7 +94,8 @@ public class ProfileController {
                 profileData.put("role", "CITIZEN");
                 profileData.put("photoUrl", citizen.getProfilePhotoUrl());
             } else if ("ADMIN".equals(role)) {
-                Admin admin = adminRepository.findByEmail(email);
+                // Use case-insensitive email lookup for admin
+                Admin admin = adminRepository.findByEmailIgnoreCase(email);
                 if (admin == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body("Admin profile not found");
@@ -257,7 +258,8 @@ public class ProfileController {
                 profileData.put("role", "CITIZEN");
                 profileData.put("photoUrl", updatedCitizen.getProfilePhotoUrl());
             } else if ("ADMIN".equals(role)) {
-                Admin admin = adminRepository.findByEmail(email);
+                // Use case-insensitive email lookup for admin
+                Admin admin = adminRepository.findByEmailIgnoreCase(email);
                 if (admin == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body("Admin profile not found");

@@ -49,3 +49,8 @@ export const updateCaseStatus = async (caseId, status) => {
     return axiosClient.put(`/cases/${caseId}/status`, { status });
 };
 
+// Get matches for a case
+export const getMatches = async (caseId) => {
+    return axiosClient.get(`/cases/${caseId}/matches`);
+};
+

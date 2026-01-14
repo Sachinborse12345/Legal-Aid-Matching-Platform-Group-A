@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import { sendOtp } from "../../api/auth";
+import { forgotPassword } from "../../api/auth";
 import { useNavigate } from "react-router-dom";
 
 export default function ForgotPassword() {
@@ -16,9 +16,8 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      // await sendOtp({ email, role }); // backend must send OTP
-      // navigate("/verify-otp", { state: { email, role } });
-      navigate("/verify-otp");
+      await forgotPassword({ email, role });
+      navigate("/verify-otp", { state: { email, role } });
 
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to send OTP");

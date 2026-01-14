@@ -15,13 +15,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/citizens")
-@CrossOrigin(origins = "http://localhost:5173")
+
 public class CitizenController {
 
     private final CitizenRepository repo;
+    private final com.example.demo.service.EmailService emailService;
 
-    public CitizenController(CitizenRepository repo) {
+    public CitizenController(CitizenRepository repo, com.example.demo.service.EmailService emailService) {
         this.repo = repo;
+        this.emailService = emailService;
     }
 
     // GET → /citizens
@@ -30,11 +32,12 @@ public class CitizenController {
         return repo.findAll();
     }
 
-    // POST → /citizens/add
+    // POST → /citizens/add (must come before /{id} to avoid path conflict)
     @PostMapping("/add")
     @Transactional
     public ResponseEntity<?> addCitizen(@RequestBody Map<String, Object> requestData) {
         try {
+            System.out.println("DEBUG: addCitizen payload: " + requestData);
             // Validate required fields
             if (requestData.get("email") == null || requestData.get("email").toString().trim().isEmpty()) {
                 return ResponseEntity
@@ -64,14 +67,14 @@ public class CitizenController {
 
             // Create new Citizen entity
             Citizen c = new Citizen();
-            
+
             // Set basic fields
             c.setFullName(requestData.get("fullName") != null ? requestData.get("fullName").toString() : "");
             c.setAadharNum(requestData.get("aadharNum").toString());
             c.setEmail(requestData.get("email").toString());
             c.setMobileNum(requestData.get("mobileNum") != null ? requestData.get("mobileNum").toString() : "");
             c.setPassword(requestData.get("password") != null ? requestData.get("password").toString() : "");
-            
+
             // Parse date of birth
             if (requestData.get("dateOfBirth") != null) {
                 try {
@@ -88,13 +91,13 @@ public class CitizenController {
                         .status(HttpStatus.BAD_REQUEST)
                         .body("Date of birth is required");
             }
-            
+
             // Set location fields (with empty string defaults if null)
             String state = requestData.get("state") != null ? requestData.get("state").toString().trim() : "";
             String district = requestData.get("district") != null ? requestData.get("district").toString().trim() : "";
             String city = requestData.get("city") != null ? requestData.get("city").toString().trim() : "";
             String address = requestData.get("address") != null ? requestData.get("address").toString().trim() : "";
-            
+
             // Validate location fields
             if (state.isEmpty()) {
                 return ResponseEntity
@@ -116,7 +119,7 @@ public class CitizenController {
                         .status(HttpStatus.BAD_REQUEST)
                         .body("Address is required");
             }
-            
+
             c.setState(state);
             c.setDistrict(district);
             c.setCity(city);
@@ -124,6 +127,13 @@ public class CitizenController {
 
             // SAVE citizen
             Citizen saved = repo.save(c);
+
+            // Send Welcome Email
+            try {
+                emailService.sendWelcomeEmail(saved.getEmail(), "CITIZEN", saved.getFullName());
+            } catch (Exception e) {
+                System.err.println("Failed to send welcome email: " + e.getMessage());
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Citizen registered successfully");
@@ -135,7 +145,8 @@ public class CitizenController {
             e.printStackTrace();
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Database schema error. Please restart the Spring Boot application to update the database schema. Error: " + e.getMessage());
+                    .body("Database schema error. Please restart the Spring Boot application to update the database schema. Error: "
+                            + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             String errorMessage = e.getMessage();
@@ -146,5 +157,13 @@ public class CitizenController {
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error saving citizen: " + errorMessage);
         }
+    }
+
+    // GET → /citizens/{id} (must come after /add to avoid path conflict)
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCitizenById(@PathVariable Integer id) {
+        return repo.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

@@ -21,10 +21,7 @@ import ResetPassword from "./components/Auth/ResetPassword.jsx";
 //New added
 
 export default function App() {
-  const [user, setUser] = useState({
-    name: "sachin",
-    role: "LAWYER",
-  });
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,9 +34,19 @@ export default function App() {
       }
 
       try {
-        const res = await getProfile();
-        if (res && res.data) {
-          setUser(res.data);
+        const role = localStorage.getItem("role");
+        if (role === "CITIZEN" || role === "ADMIN") {
+          const res = await getProfile();
+          if (res && res.data) {
+            setUser(res.data);
+          }
+        } else {
+          // For Lawyer/NGO, just set basic user info from localStorage if needed
+          setUser({
+            email: localStorage.getItem("email"),
+            role: role,
+            userId: localStorage.getItem("userId")
+          });
         }
       } catch (error) {
         // Silently fail - user is not logged in
@@ -66,9 +73,12 @@ export default function App() {
 
   const onLogin = (userData) => {
     setUser(userData);
-    navigate("/dashboard/citizen", {
-      state: { success: "Login successful!" },
-    });
+    const role = userData.role?.toUpperCase();
+    if (role === "CITIZEN") navigate("/citizen/dashboard");
+    else if (role === "LAWYER") navigate("/lawyer/dashboard");
+    else if (role === "NGO") navigate("/ngo/dashboard");
+    else if (role === "ADMIN") navigate("/dashboard/admin");
+    else navigate("/");
   };
 
   return (

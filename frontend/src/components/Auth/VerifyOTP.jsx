@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import { verifyOtp } from "../../api/auth";
+import { verifyOtp } from "../../api/auth";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function VerifyOTP() {
@@ -17,9 +17,8 @@ export default function VerifyOTP() {
     setError(null);
 
     try {
-      // await verifyOtp({ email, otp, role });
-      // navigate("/reset-password", { state: { email, role } });
-      navigate("/reset-password");
+      await verifyOtp({ email, otp });
+      navigate("/reset-password", { state: { email, role } });
     } catch (err) {
       setError(err?.response?.data?.message || "Invalid OTP");
     }

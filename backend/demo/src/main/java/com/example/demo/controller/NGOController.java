@@ -14,19 +14,22 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/ngos")
-@CrossOrigin(origins = "http://localhost:5173")
+
 public class NGOController {
 
     private final NGORepository repo;
     private final CloudinaryService cloudinaryService;
     private final DirectoryEntryRepository directoryEntryRepository;
+    private final com.example.demo.service.EmailService emailService;
 
     public NGOController(NGORepository repo,
             CloudinaryService cloudinaryService,
-            DirectoryEntryRepository directoryEntryRepository) {
+            DirectoryEntryRepository directoryEntryRepository,
+            com.example.demo.service.EmailService emailService) {
         this.repo = repo;
         this.cloudinaryService = cloudinaryService;
         this.directoryEntryRepository = directoryEntryRepository;
+        this.emailService = emailService;
     }
 
     // Citizens: see all NGOs (verified + unverified)
@@ -128,6 +131,13 @@ public class NGOController {
 
             NGO saved = repo.save(ngo);
 
+            // Send Welcome Email
+            try {
+                emailService.sendWelcomeEmail(saved.getEmail(), "NGO", saved.getNgoName());
+            } catch (Exception e) {
+                System.err.println("Failed to send welcome email: " + e.getMessage());
+            }
+
             // SYNC TO DIRECTORY
             com.example.demo.entity.DirectoryEntry entry = directoryEntryRepository
                     .findByTypeAndRegistrationNumber("NGO", registrationNumber);
@@ -147,8 +157,10 @@ public class NGOController {
                 entry.setLatitude(ngo.getLatitude());
             if (ngo.getLongitude() != null)
                 entry.setLongitude(ngo.getLongitude());
+            entry.setOriginalId(saved.getId());
             entry.setVerified(verified);
             entry.setApproved(false); // New registrations need approval
+            entry.setSpecialization(ngoType); // SYNC SPECIALIZATION
             directoryEntryRepository.save(entry);
 
             return ResponseEntity.ok(saved);
@@ -239,6 +251,8 @@ public class NGOController {
                     entry.setLatitude(ngo.getLatitude());
                 if (ngo.getLongitude() != null)
                     entry.setLongitude(ngo.getLongitude());
+                entry.setOriginalId(updatedNgo.getId());
+                entry.setSpecialization(ngo.getNgoType()); // SYNC SPECIALIZATION
                 directoryEntryRepository.save(entry);
             }
 

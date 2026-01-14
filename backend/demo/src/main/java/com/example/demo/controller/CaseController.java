@@ -14,8 +14,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/cases")
-@CrossOrigin(origins = "http://localhost:5173", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
-        RequestMethod.DELETE, RequestMethod.OPTIONS })
 public class CaseController {
 
     private final CaseRepository caseRepository;
@@ -66,12 +64,15 @@ public class CaseController {
             @RequestBody Map<String, Object> requestData) {
         try {
             Integer citizenId = extractUserId(authHeader);
+            System.out.println("DEBUG: saveStep - Auth User ID: " + citizenId); // DEBUG LOG
+
             if (citizenId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
             }
 
             Integer step = (Integer) requestData.get("step");
             Long caseId = requestData.get("caseId") != null ? Long.valueOf(requestData.get("caseId").toString()) : null;
+            System.out.println("DEBUG: saveStep - Received CaseID: " + caseId + ", Step: " + step); // DEBUG LOG
 
             Case caseEntity;
 
@@ -171,10 +172,21 @@ public class CaseController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
             }
 
-            List<Case> cases = caseRepository.findByCitizenIdOrderByUpdatedAtDesc(citizenId);
-            return ResponseEntity.ok(cases);
+            System.out.println("DEBUG: [VERBOSE] Entering getMyCases for CitizenID: " + citizenId);
+
+            // Debug: Print ALL cases for this citizen with details
+            List<Case> allCases = caseRepository.findByCitizenIdOrderByUpdatedAtDesc(citizenId);
+            System.out.println("DEBUG: [VERBOSE] Found " + allCases.size() + " total cases for citizen " + citizenId);
+            for (Case c : allCases) {
+                System.out.println("   -> Case ID: " + c.getId() + ", Number: " + c.getCaseNumber() + ", Title: "
+                        + c.getCaseTitle() + ", Submitted: " + c.getIsSubmitted());
+            }
+
+            return ResponseEntity.ok(allCases);
 
         } catch (Exception e) {
+            System.err.println("DEBUG: CaseController ERROR: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching cases: " + e.getMessage());
         }
@@ -226,6 +238,14 @@ public class CaseController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error creating case: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/debug/all")
+    public ResponseEntity<?> getAllCasesDebug() {
+        System.out.println("DEBUG: [VERBOSE] Entering getAllCasesDebug");
+        List<Case> all = caseRepository.findAll();
+        System.out.println("DEBUG: [VERBOSE] Returning " + all.size() + " cases from DB");
+        return ResponseEntity.ok(all);
     }
 
     // Get case by ID (owner OR admin)

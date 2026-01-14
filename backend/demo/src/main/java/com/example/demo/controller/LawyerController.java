@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/lawyers")
-@CrossOrigin(origins = "http://localhost:5173")
+
 public class LawyerController {
 
     private final LawyerRepository lawyerRepository;
@@ -23,18 +23,21 @@ public class LawyerController {
     private final LawyerImportService lawyerImportService;
     private final DirectoryEntryRepository directoryEntryRepository;
     private final BarCouncilImportService barCouncilImportService;
+    private final com.example.demo.service.EmailService emailService;
 
     public LawyerController(
             LawyerRepository lawyerRepository,
             CloudinaryService cloudinaryService,
             LawyerImportService lawyerImportService,
             DirectoryEntryRepository directoryEntryRepository,
-            BarCouncilImportService barCouncilImportService) {
+            BarCouncilImportService barCouncilImportService,
+            com.example.demo.service.EmailService emailService) {
         this.lawyerRepository = lawyerRepository;
         this.cloudinaryService = cloudinaryService;
         this.lawyerImportService = lawyerImportService;
         this.directoryEntryRepository = directoryEntryRepository;
         this.barCouncilImportService = barCouncilImportService;
+        this.emailService = emailService;
     }
 
     // Citizens: see all lawyers (verified + unverified)
@@ -144,6 +147,13 @@ public class LawyerController {
 
             Lawyer savedLawyer = lawyerRepository.save(lawyer);
 
+            // Send Welcome Email
+            try {
+                emailService.sendWelcomeEmail(savedLawyer.getEmail(), "LAWYER", savedLawyer.getFullName());
+            } catch (Exception e) {
+                System.err.println("Failed to send welcome email: " + e.getMessage());
+            }
+
             // SYNC TO DIRECTORY
             // Check if entry exists to avoid duplicates or update existing placeholder
             com.example.demo.entity.DirectoryEntry entry = directoryEntryRepository.findByTypeAndBarCouncilId("LAWYER",
@@ -165,6 +175,7 @@ public class LawyerController {
             entry.setCity(city);
             entry.setLatitude(lawyer.getLatitude());
             entry.setLongitude(lawyer.getLongitude());
+            entry.setOriginalId(savedLawyer.getId());
             entry.setVerified(verifiedInDirectory);
             entry.setApproved(false); // New registrations need approval
 
@@ -258,43 +269,140 @@ public class LawyerController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProfile(@PathVariable Integer id, @RequestBody Lawyer lawyerDetails) {
-        return lawyerRepository.findById(id).map(lawyer -> {
-            lawyer.setFullName(lawyerDetails.getFullName());
-            lawyer.setMobileNum(lawyerDetails.getMobileNum());
-            lawyer.setSpecialization(lawyerDetails.getSpecialization());
-            lawyer.setBarState(lawyerDetails.getBarState());
-            lawyer.setBarCouncilId(lawyerDetails.getBarCouncilId());
-            lawyer.setExperienceYears(lawyerDetails.getExperienceYears());
-            lawyer.setAddress(lawyerDetails.getAddress());
-            lawyer.setCity(lawyerDetails.getCity());
-            lawyer.setState(lawyerDetails.getState());
-            lawyer.setDistrict(lawyerDetails.getDistrict());
-            if (lawyerDetails.getLatitude() != null)
-                lawyer.setLatitude(lawyerDetails.getLatitude());
-            if (lawyerDetails.getLongitude() != null)
-                lawyer.setLongitude(lawyerDetails.getLongitude());
+        try {
+            System.out.println("DEBUG: Updating lawyer with ID: " + id);
+            System.out.println("DEBUG: Received lawyerDetails: " + lawyerDetails);
+            
+            return lawyerRepository.findById(id).map(lawyer -> {
+                try {
+                    // Update fields only if provided, otherwise keep existing values
+                    // This allows partial updates
+                    if (lawyerDetails.getFullName() != null && !lawyerDetails.getFullName().trim().isEmpty()) {
+                        lawyer.setFullName(lawyerDetails.getFullName().trim());
+                    } else if (lawyer.getFullName() == null || lawyer.getFullName().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("Full name is required");
+                    }
+                    
+                    if (lawyerDetails.getMobileNum() != null && !lawyerDetails.getMobileNum().trim().isEmpty()) {
+                        lawyer.setMobileNum(lawyerDetails.getMobileNum().trim());
+                    } else if (lawyer.getMobileNum() == null || lawyer.getMobileNum().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("Mobile number is required");
+                    }
+                    
+                    if (lawyerDetails.getSpecialization() != null && !lawyerDetails.getSpecialization().trim().isEmpty()) {
+                        lawyer.setSpecialization(lawyerDetails.getSpecialization().trim());
+                    } else if (lawyer.getSpecialization() == null || lawyer.getSpecialization().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("Specialization is required");
+                    }
+                    
+                    if (lawyerDetails.getBarState() != null && !lawyerDetails.getBarState().trim().isEmpty()) {
+                        lawyer.setBarState(lawyerDetails.getBarState().trim());
+                    } else if (lawyer.getBarState() == null || lawyer.getBarState().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("Bar state is required");
+                    }
+                    
+                    if (lawyerDetails.getBarCouncilId() != null && !lawyerDetails.getBarCouncilId().trim().isEmpty()) {
+                        lawyer.setBarCouncilId(lawyerDetails.getBarCouncilId().trim());
+                    } else if (lawyer.getBarCouncilId() == null || lawyer.getBarCouncilId().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("Bar Council ID is required");
+                    }
+                    
+                    if (lawyerDetails.getAddress() != null && !lawyerDetails.getAddress().trim().isEmpty()) {
+                        lawyer.setAddress(lawyerDetails.getAddress().trim());
+                    } else if (lawyer.getAddress() == null || lawyer.getAddress().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("Address is required");
+                    }
+                    
+                    if (lawyerDetails.getCity() != null && !lawyerDetails.getCity().trim().isEmpty()) {
+                        lawyer.setCity(lawyerDetails.getCity().trim());
+                    } else if (lawyer.getCity() == null || lawyer.getCity().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("City is required");
+                    }
+                    
+                    if (lawyerDetails.getState() != null && !lawyerDetails.getState().trim().isEmpty()) {
+                        lawyer.setState(lawyerDetails.getState().trim());
+                    } else if (lawyer.getState() == null || lawyer.getState().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("State is required");
+                    }
+                    
+                    if (lawyerDetails.getDistrict() != null && !lawyerDetails.getDistrict().trim().isEmpty()) {
+                        lawyer.setDistrict(lawyerDetails.getDistrict().trim());
+                    } else if (lawyer.getDistrict() == null || lawyer.getDistrict().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("District is required");
+                    }
+                    
+                    // Handle experienceYears - use provided value or keep existing
+                    // If provided, use it; otherwise keep existing value; if both are null, default to 0
+                    if (lawyerDetails.getExperienceYears() != null) {
+                        lawyer.setExperienceYears(lawyerDetails.getExperienceYears());
+                    } else if (lawyer.getExperienceYears() == null) {
+                        // If neither provided nor existing, default to 0
+                        lawyer.setExperienceYears(0);
+                        System.out.println("DEBUG: experienceYears was null, defaulting to 0");
+                    }
+                    // If lawyerDetails is null but lawyer has a value, keep existing (no action needed)
+                    
+                    // Update latitude and longitude if provided
+                    if (lawyerDetails.getLatitude() != null) {
+                        lawyer.setLatitude(lawyerDetails.getLatitude());
+                    }
+                    if (lawyerDetails.getLongitude() != null) {
+                        lawyer.setLongitude(lawyerDetails.getLongitude());
+                    }
 
-            Lawyer updatedLawyer = lawyerRepository.save(lawyer);
+                    System.out.println("DEBUG: Saving lawyer to database");
+                    Lawyer updatedLawyer = lawyerRepository.save(lawyer);
+                    System.out.println("DEBUG: Lawyer saved successfully");
 
-            // SYNC TO DIRECTORY
-            com.example.demo.entity.DirectoryEntry entry = directoryEntryRepository.findByTypeAndBarCouncilId("LAWYER",
-                    lawyer.getBarCouncilId());
-            if (entry != null) {
-                entry.setName(lawyer.getFullName());
-                entry.setSpecialization(lawyer.getSpecialization());
-                entry.setExperienceYears(lawyer.getExperienceYears());
-                entry.setContactPhone(lawyer.getMobileNum());
-                entry.setState(lawyer.getState());
-                entry.setDistrict(lawyer.getDistrict());
-                entry.setCity(lawyer.getCity());
-                if (lawyer.getLatitude() != null)
-                    entry.setLatitude(lawyer.getLatitude());
-                if (lawyer.getLongitude() != null)
-                    entry.setLongitude(lawyer.getLongitude());
-                directoryEntryRepository.save(entry);
-            }
+                    // SYNC TO DIRECTORY
+                    try {
+                        com.example.demo.entity.DirectoryEntry entry = directoryEntryRepository.findByTypeAndBarCouncilId("LAWYER",
+                                lawyer.getBarCouncilId());
+                        if (entry != null) {
+                            entry.setName(lawyer.getFullName());
+                            entry.setSpecialization(lawyer.getSpecialization());
+                            entry.setExperienceYears(lawyer.getExperienceYears());
+                            entry.setContactPhone(lawyer.getMobileNum());
+                            entry.setState(lawyer.getState());
+                            entry.setDistrict(lawyer.getDistrict());
+                            entry.setCity(lawyer.getCity());
+                            if (lawyer.getLatitude() != null)
+                                entry.setLatitude(lawyer.getLatitude());
+                            if (lawyer.getLongitude() != null)
+                                entry.setLongitude(lawyer.getLongitude());
+                            entry.setOriginalId(updatedLawyer.getId());
+                            directoryEntryRepository.save(entry);
+                            System.out.println("DEBUG: Directory entry synced successfully");
+                        }
+                    } catch (Exception e) {
+                        // Log directory sync error but don't fail the update
+                        System.err.println("Error syncing to directory: " + e.getMessage());
+                        e.printStackTrace();
+                    }
 
-            return ResponseEntity.ok(updatedLawyer);
-        }).orElse(ResponseEntity.notFound().build());
+                    return ResponseEntity.ok(updatedLawyer);
+                } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                    System.err.println("DEBUG: Data integrity violation: " + e.getMessage());
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Database constraint violation: " + e.getMessage());
+                } catch (Exception e) {
+                    System.err.println("DEBUG: Error in map function: " + e.getMessage());
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Error updating profile: " + e.getMessage());
+                }
+            }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lawyer not found with id: " + id));
+        } catch (org.springframework.http.converter.HttpMessageNotReadableException e) {
+            System.err.println("DEBUG: JSON parsing error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid JSON format: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("DEBUG: Outer catch - Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating profile: " + e.getMessage());
+        }
     }
 }

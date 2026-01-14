@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import { resetPassword } from "../../api/auth";
+import { resetPassword } from "../../api/auth";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function ResetPassword() {
@@ -23,7 +23,7 @@ export default function ResetPassword() {
     }
 
     try {
-      // await resetPassword({ email, role, password });
+      await resetPassword({ email, role, newPassword: password });
       navigate("/login");
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to reset password");
