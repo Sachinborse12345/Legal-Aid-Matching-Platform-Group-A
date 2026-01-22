@@ -4,8 +4,8 @@ import axios from 'axios';
 // I need to search for them or delete by ID if I knew it.
 // Since I don't know the exact IDs created (randomized), I will FETCH all lawyers, find the "Fake" or "Vikram" ones, and DELETE them.
 
-const LAWYER_API_URL = 'http://localhost:8080/api/lawyers';
-const NGO_API_URL = 'http://localhost:8080/api/ngos';
+const LAWYER_API_URL = 'https://advocare-backend-gkg0.onrender.com/api/lawyers';
+const NGO_API_URL = 'https://advocare-backend-gkg0.onrender.com/api/ngos';
 
 async function deleteFakeLawyers() {
     try {
@@ -80,7 +80,7 @@ async function deleteFakeNGOs() {
 async function triggerBarCouncilImport() {
     try {
         console.log("Triggering Bar Council Data Import (to verify Gopal Reddy)...");
-        const response = await axios.post('http://localhost:8080/api/lawyers/admin/import-bar-council');
+        const response = await axios.post('https://advocare-backend-gkg0.onrender.com/api/lawyers/admin/import-bar-council');
         console.log("Import result:", response.data);
     } catch (error) {
         console.error("Failed to import Bar Council Data:", error.message);

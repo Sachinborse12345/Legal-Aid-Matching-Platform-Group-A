@@ -1,7 +1,7 @@
 import axios from 'axios';
 import FormData from 'form-data';
 
-const API_URL = 'http://localhost:8080/api/lawyers/add';
+const API_URL = 'https://advocare-backend-gkg0.onrender.com/api/lawyers/add';
 
 async function createLawyer(data) {
     try {
@@ -37,7 +37,7 @@ const verifiedLawyer = {
     password: "password123"
 };
 
-const NGO_API_URL = 'http://localhost:8080/api/ngos/add';
+const NGO_API_URL = 'https://advocare-backend-gkg0.onrender.com/api/ngos/add';
 
 async function createNGO(data) {
     try {
