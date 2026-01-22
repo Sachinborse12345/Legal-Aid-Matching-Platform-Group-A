@@ -3,7 +3,7 @@ import CitizenForm from "./CitizenForm";
 import LawyerForm from "./LawyerForm";
 import NGOForm from "./NGOForm";
 import { useNavigate, Link } from "react-router-dom";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/LOGO.png";
 
 const Register = () => {
   const [role, setRole] = useState("Citizen");
@@ -106,15 +106,24 @@ const Register = () => {
         <div className="absolute bottom-0 left-0 p-16 z-10">
           <Link to="/" className="flex items-center gap-4 mb-8 group">
             <div className="w-16 h-16 bg-[#D4AF37]/20 border border-[#D4AF37] rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-[#D4AF37] transition-all">
-              <img src={logo} alt="Logo" className="w-8 h-8 object-contain brightness-0 invert group-hover:invert-0 transition-all" />
+              <img
+                src={logo}
+                alt="Logo"
+                className="w-8 h-8 object-contain brightness-0 invert group-hover:invert-0 transition-all"
+              />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white font-serif tracking-tight">AdvoCare</h1>
-              <p className="text-[#D4AF37] text-sm uppercase tracking-widest">Premium Legal Services</p>
+              <h1 className="text-4xl font-bold text-white font-serif tracking-tight">
+                AdvoCare
+              </h1>
+              <p className="text-[#D4AF37] text-sm uppercase tracking-widest">
+                Premium Legal Services
+              </p>
             </div>
           </Link>
           <h2 className="text-5xl font-bold text-white mb-6 font-serif leading-tight">
-            Join the Network of <br /> <span className="text-[#D4AF37]">Truth & Justice.</span>
+            Join the Network of <br />{" "}
+            <span className="text-[#D4AF37]">Truth & Justice.</span>
           </h2>
           <p className="text-gray-400 text-lg max-w-md leading-relaxed border-l-4 border-[#D4AF37] pl-6">
             Whether you seek justice or provide it, your journey starts here.
@@ -126,28 +135,38 @@ const Register = () => {
       {/* RIGHT PANEL - FORM (Scrollable) */}
       <div className="w-full lg:w-1/2 h-full absolute right-0 top-0 overflow-y-auto bg-white dark:bg-[#111111] custom-scrollbar transition-colors">
         <div className="min-h-screen py-16 px-8 md:px-24 flex flex-col justify-center">
-
           {/* Mobile Logo for small screens */}
           <div className="lg:hidden text-center mb-10">
-            <img src={logo} alt="Logo" className="w-16 h-16 mx-auto mb-4 brightness-0 invert" />
-            <h1 className="text-3xl font-bold text-[#D4AF37] font-serif">AdvoCare</h1>
+            <img
+              src={logo}
+              alt="Logo"
+              className="w-16 h-16 mx-auto mb-4 brightness-0 invert"
+            />
+            <h1 className="text-3xl font-bold text-[#D4AF37] font-serif">
+              AdvoCare
+            </h1>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white font-serif mb-2 transition-colors">Create Account</h2>
-            <p className="text-gray-500 dark:text-gray-400 transition-colors">Please select your role to proceed.</p>
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white font-serif mb-2 transition-colors">
+              Create Account
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 transition-colors">
+              Please select your role to proceed.
+            </p>
           </div>
 
           {/* Role Switcher */}
           <div className="grid grid-cols-3 gap-4 mb-10 p-1 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-100 dark:border-[#333] rounded-lg transition-colors">
-            {['Citizen', 'Lawyer', 'NGO'].map((r) => (
+            {["Citizen", "Lawyer", "NGO"].map((r) => (
               <button
                 key={r}
                 onClick={() => handleRoleChange(r)}
-                className={`py-3 text-sm font-bold uppercase tracking-widest transition-all rounded-md ${role === r
-                  ? 'bg-[#D4AF37] text-black shadow-lg'
-                  : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#252525]'
-                  }`}
+                className={`py-3 text-sm font-bold uppercase tracking-widest transition-all rounded-md ${
+                  role === r
+                    ? "bg-[#D4AF37] text-black shadow-lg"
+                    : "text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#252525]"
+                }`}
               >
                 {r}
               </button>
@@ -155,19 +174,19 @@ const Register = () => {
           </div>
 
           {/* The Form Rendered Here */}
-          <div id="dark-register-wrapper">
-            {renderForm()}
-          </div>
+          <div id="dark-register-wrapper">{renderForm()}</div>
 
           <div className="mt-10 pt-10 border-t border-gray-100 dark:border-[#333] text-center transition-colors">
             <p className="text-gray-400 dark:text-gray-500">
-              Already have an account?{' '}
-              <Link to="/login" className="text-[#D4AF37] font-bold hover:underline">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-[#D4AF37] font-bold hover:underline"
+              >
                 Log In Here
               </Link>
             </p>
           </div>
-
         </div>
       </div>
     </div>

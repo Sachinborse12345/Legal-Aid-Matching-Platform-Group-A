@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { verifyOtp } from "../../api/auth";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FiCheckCircle } from "react-icons/fi";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/LOGO.png";
 import { toast } from "react-toastify";
 
 export default function VerifyOTP() {
@@ -82,9 +82,15 @@ export default function VerifyOTP() {
 
           <div className="absolute bottom-0 left-0 p-12 text-[#E5E5E5] z-10">
             <div className="w-20 h-20 mb-6 flex items-center justify-center border-2 border-[#D4AF37]/30 rounded-full bg-black/50 backdrop-blur-md">
-              <img src={logo} alt="Logo" className="w-12 h-12 object-contain brightness-0 invert" />
+              <img
+                src={logo}
+                alt="Logo"
+                className="w-12 h-12 object-contain brightness-0 invert"
+              />
             </div>
-            <h2 className="text-5xl font-bold mb-4 tracking-tight font-serif text-[#D4AF37]">AdvoCare</h2>
+            <h2 className="text-5xl font-bold mb-4 tracking-tight font-serif text-[#D4AF37]">
+              AdvoCare
+            </h2>
             <p className="text-gray-300 text-lg font-light leading-relaxed max-w-md border-l-4 border-[#D4AF37] pl-4">
               Secure verification process.
             </p>
@@ -95,17 +101,20 @@ export default function VerifyOTP() {
         <div className="w-full h-full flex flex-col justify-center p-10 md:p-16 bg-white dark:bg-[#1a1a1a] relative border-l border-gray-100 dark:border-[#333] transition-colors">
           <div className="max-w-md mx-auto w-full">
             <div className="mb-10 text-center md:text-left">
-              <h2 className="text-4xl font-bold text-[#D4AF37] mb-2 font-serif">Verify OTP</h2>
+              <h2 className="text-4xl font-bold text-[#D4AF37] mb-2 font-serif">
+                Verify OTP
+              </h2>
               <p className="text-gray-500 dark:text-gray-400 font-sans transition-colors">
                 Enter the code sent to <strong>{email || "your email"}</strong>
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-
               {/* OTP INPUT */}
               <div className="group">
-                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">One-Time Password</label>
+                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">
+                  One-Time Password
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FiCheckCircle className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-[#D4AF37] transition-colors" />
@@ -115,20 +124,38 @@ export default function VerifyOTP() {
                     value={otp}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`block w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.otp && validationErrors.otp ? 'border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10' : 'border-gray-200 dark:border-[#333]'} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm tracking-[0.5em] text-center`}
+                    className={`block w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.otp && validationErrors.otp ? "border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10" : "border-gray-200 dark:border-[#333]"} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm tracking-[0.5em] text-center`}
                     placeholder="— — — — — —"
                     maxLength={6}
                   />
                 </div>
                 {touched.otp && validationErrors.otp && (
-                  <p className="text-red-500 text-xs mt-1 font-sans">{validationErrors.otp}</p>
+                  <p className="text-red-500 text-xs mt-1 font-sans">
+                    {validationErrors.otp}
+                  </p>
                 )}
               </div>
 
               {error && (
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 flex items-start gap-3 transition-colors">
-                  <span className="text-red-500 mt-0.5"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
-                  <div className="text-sm text-red-600 dark:text-red-400 font-sans transition-colors">{error}</div>
+                  <span className="text-red-500 mt-0.5">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </span>
+                  <div className="text-sm text-red-600 dark:text-red-400 font-sans transition-colors">
+                    {error}
+                  </div>
                 </div>
               )}
 
