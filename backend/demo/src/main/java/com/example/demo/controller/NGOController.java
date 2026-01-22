@@ -60,6 +60,77 @@ public class NGOController {
         return ResponseEntity.ok(appointmentService.getNGOAnalytics(id));
     }
 
+    // Get simplified NGO list for comparison dropdown
+    @GetMapping("/list")
+    public ResponseEntity<List<NGOSummaryDTO>> getNGOsList(
+            @RequestParam(required = false) String ngoType,
+            @RequestParam(required = false) String city) {
+        List<NGO> ngos;
+        if (ngoType != null && city != null) {
+            // Filter by type and city
+            ngos = repo.findAll().stream()
+                    .filter(n -> n.getNgoType() != null && n.getNgoType().equalsIgnoreCase(ngoType) &&
+                            n.getCity() != null && n.getCity().equalsIgnoreCase(city))
+                    .collect(java.util.stream.Collectors.toList());
+        } else if (city != null) {
+            // Filter by city only
+            ngos = repo.findAll().stream()
+                    .filter(n -> n.getCity() != null && n.getCity().equalsIgnoreCase(city))
+                    .collect(java.util.stream.Collectors.toList());
+        } else if (ngoType != null) {
+            // Filter by type only
+            ngos = repo.findMatches(ngoType);
+        } else {
+            ngos = repo.findAll();
+        }
+        
+        List<NGOSummaryDTO> summaries = ngos.stream()
+                .map(n -> new NGOSummaryDTO(
+                        n.getId(),
+                        n.getNgoName(),
+                        n.getNgoType(),
+                        n.getCity(),
+                        n.getState(),
+                        n.isVerificationStatus()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+        
+        return ResponseEntity.ok(summaries);
+    }
+
+    // Simple DTO for NGO summary
+    public static class NGOSummaryDTO {
+        private Integer id;
+        private String ngoName;
+        private String ngoType;
+        private String city;
+        private String state;
+        private boolean verificationStatus;
+
+        public NGOSummaryDTO(Integer id, String ngoName, String ngoType, String city, 
+                               String state, boolean verificationStatus) {
+            this.id = id;
+            this.ngoName = ngoName;
+            this.ngoType = ngoType;
+            this.city = city;
+            this.state = state;
+            this.verificationStatus = verificationStatus;
+        }
+
+        public Integer getId() { return id; }
+        public void setId(Integer id) { this.id = id; }
+        public String getNgoName() { return ngoName; }
+        public void setNgoName(String ngoName) { this.ngoName = ngoName; }
+        public String getNgoType() { return ngoType; }
+        public void setNgoType(String ngoType) { this.ngoType = ngoType; }
+        public String getCity() { return city; }
+        public void setCity(String city) { this.city = city; }
+        public String getState() { return state; }
+        public void setState(String state) { this.state = state; }
+        public boolean isVerificationStatus() { return verificationStatus; }
+        public void setVerificationStatus(boolean verificationStatus) { this.verificationStatus = verificationStatus; }
+    }
+
     @PostMapping("/add")
     public ResponseEntity<?> addNGO(
             @RequestParam("ngoName") String ngoName,

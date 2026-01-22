@@ -7,6 +7,7 @@ import axiosClient from "../../api/axiosClient.js";
 import { fetchUserProfile } from "../../Redux/authSlice.js";
 import Sidebar from "./Sidebar.jsx";
 import Overview from "./Overview.jsx";
+import CitizenAnalytics from "./CitizenAnalytics.jsx";
 import Messages from "./Messages.jsx";
 import Schedule from "./Schedule.jsx";
 import CitizenAddCase from "./CitizenAddCase.jsx";
@@ -312,7 +313,7 @@ export default function CitizenDashboard() {
         {/* Main content switch */}
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
           <section className="space-y-6 pb-20">
-            {activePage === "overview" && <Overview role="CITIZEN" profile={profile} />}
+            {activePage === "overview" && <CitizenAnalytics profile={profile} />}
 
             {activePage === "addcase" && <CitizenAddCase />}
 

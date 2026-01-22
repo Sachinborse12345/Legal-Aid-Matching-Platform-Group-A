@@ -6,7 +6,7 @@ import axiosClient from "../../api/axiosClient";
 import {
     FiSend, FiPaperclip, FiImage, FiFileText, FiMessageSquare, FiSearch,
     FiMoreVertical, FiArrowLeft, FiEdit2, FiCheck, FiX, FiTrash2, FiCornerDownLeft,
-    FiSmile, FiMic, FiPhone, FiVideo, FiInfo, FiMail, FiMapPin, FiAward
+    FiSmile, FiMic, FiPhone, FiVideo, FiInfo, FiMail, FiMapPin, FiAward, FiWifi, FiWifiOff
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -23,12 +23,29 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
     const [isTyping, setIsTyping] = useState(false);
     const [showContactInfo, setShowContactInfo] = useState(false);
     const [contactInfo, setContactInfo] = useState(null);
+    const [isOnline, setIsOnline] = useState(true); // User's own online status
+    const [onlineUsers, setOnlineUsers] = useState(new Map()); // Track online status of other users
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
     const typingTimeoutRef = useRef(null);
 
     const currentRole = (profile?.role || localStorage.getItem("role") || "CITIZEN").toUpperCase();
     const currentUserId = profile?.id || localStorage.getItem("userId");
+
+    // Load online status from localStorage on mount
+    useEffect(() => {
+        const savedStatus = localStorage.getItem(`userOnlineStatus_${currentUserId}`);
+        if (savedStatus !== null) {
+            setIsOnline(savedStatus === 'true');
+        }
+    }, [currentUserId]);
+
+    // Save online status to localStorage
+    useEffect(() => {
+        if (currentUserId) {
+            localStorage.setItem(`userOnlineStatus_${currentUserId}`, isOnline.toString());
+        }
+    }, [isOnline, currentUserId]);
 
     // Fetch sessions on load
     useEffect(() => {
@@ -70,6 +87,7 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
         const client = new Client({
             webSocketFactory: () => socket,
             onConnect: () => {
+                // Subscribe to session messages
                 client.subscribe(`/topic/session.${currentSession.id}`, (msg) => {
                     const data = JSON.parse(msg.body);
 
@@ -89,6 +107,15 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                                 });
                             }
                         }
+                    } else if (data.type === 'PRESENCE') {
+                        // Handle presence status updates
+                        if (String(data.userId) !== String(currentUserId)) {
+                            setOnlineUsers(prev => {
+                                const newMap = new Map(prev);
+                                newMap.set(data.userId, data.isOnline);
+                                return newMap;
+                            });
+                        }
                     } else {
                         // It's a message (new, edited, or deleted)
                         setMessages((prev) => {
@@ -105,16 +132,93 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                         scrollToBottom();
                     }
                 });
+
+                // Broadcast initial online status after connection is established
+                // Use a small delay to ensure connection is fully ready
+                setTimeout(() => {
+                    try {
+                        if (client && client.connected) {
+                            client.publish({
+                                destination: "/app/chat.presence",
+                                body: JSON.stringify({
+                                    sessionId: currentSession.id,
+                                    userId: currentUserId,
+                                    isOnline: isOnline
+                                }),
+                            });
+                        }
+                    } catch (error) {
+                        console.warn("Failed to broadcast initial presence:", error);
+                    }
+                }, 200);
             },
+            onDisconnect: () => {
+                console.log("WebSocket disconnected");
+            },
+            onStompError: (frame) => {
+                console.error("STOMP error:", frame);
+            }
         });
 
         client.activate();
         setStompClient(client);
 
         return () => {
-            if (client) client.deactivate();
+            if (client) {
+                try {
+                    client.deactivate();
+                } catch (error) {
+                    console.warn("Error deactivating client:", error);
+                }
+            }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentSession, currentUserId]);
+
+    // Broadcast presence status when it changes to all sessions
+    useEffect(() => {
+        if (!stompClient || !currentUserId || sessions.length === 0) return;
+
+        // Only broadcast if client is connected
+        if (!stompClient.connected) {
+            // Wait a bit and try again
+            const timeoutId = setTimeout(() => {
+                if (stompClient && stompClient.connected) {
+                    sessions.forEach(session => {
+                        try {
+                            stompClient.publish({
+                                destination: "/app/chat.presence",
+                                body: JSON.stringify({
+                                    sessionId: session.id,
+                                    userId: currentUserId,
+                                    isOnline: isOnline
+                                }),
+                            });
+                        } catch (error) {
+                            console.warn("Failed to broadcast presence:", error);
+                        }
+                    });
+                }
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+
+        // Broadcast to all sessions
+        sessions.forEach(session => {
+            try {
+                stompClient.publish({
+                    destination: "/app/chat.presence",
+                    body: JSON.stringify({
+                        sessionId: session.id,
+                        userId: currentUserId,
+                        isOnline: isOnline
+                    }),
+                });
+            } catch (error) {
+                console.warn("Failed to broadcast presence to session:", session.id, error);
+            }
+        });
+    }, [isOnline, stompClient, sessions, currentUserId]);
 
     const selectSession = async (session) => {
         setCurrentSession(session);
@@ -469,6 +573,24 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
         setContactInfo(null);
     };
 
+    const toggleOnlineStatus = () => {
+        setIsOnline(prev => !prev);
+        toast.success(`You are now ${!isOnline ? 'online' : 'offline'}`);
+    };
+
+    // Get the other user's ID in the current session
+    const getOtherUserId = () => {
+        if (!currentSession) return null;
+        if (currentRole === 'CITIZEN') {
+            return currentSession.providerId;
+        } else {
+            return currentSession.citizenId;
+        }
+    };
+
+    const otherUserId = getOtherUserId();
+    const isOtherUserOnline = otherUserId ? onlineUsers.get(otherUserId) : false;
+
     return (
         <div className="flex h-[calc(100vh-160px)] bg-[#efeae2] dark:bg-[#0a0a0a] overflow-hidden font-sans transition-colors">
             {/* Sidebar - Platform style */}
@@ -477,10 +599,31 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                 <div className="bg-white dark:bg-[#1a1a1a] px-4 py-3 border-b border-gray-200 dark:border-[#333] transition-colors">
                     <div className="flex items-center justify-between mb-3">
                         <div>
-                            <h3 className="text-xl font-bold font-serif text-gray-900 dark:text-white">Legal Communications</h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-xl font-bold font-serif text-gray-900 dark:text-white">Legal Communications</h3>
+                                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    isOnline 
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                                }`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                    {isOnline ? 'Online' : 'Offline'}
+                                </div>
+                            </div>
                             <span className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-widest">Secure Messaging Hub</span>
                         </div>
                         <div className="flex items-center gap-2">
+                            <button
+                                onClick={toggleOnlineStatus}
+                                className={`p-2 rounded-full transition-colors ${
+                                    isOnline
+                                        ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                        : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-[#222]'
+                                }`}
+                                title={isOnline ? "You're Online - Click to go Offline" : "You're Offline - Click to go Online"}
+                            >
+                                {isOnline ? <FiWifi size={20} /> : <FiWifiOff size={20} />}
+                            </button>
                             <button
                                 onClick={() => toast.info("New conversation feature coming soon")}
                                 className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-[#D4AF37] rounded-full transition-colors"
@@ -530,7 +673,16 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                                             <div className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-white text-lg shadow-lg ${isActive ? 'bg-[#D4AF37]' : 'bg-gray-500 dark:bg-[#54656f]'}`}>
                                                 {getSessionDisplayName(session).charAt(0).toUpperCase()}
                                             </div>
-                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#D4AF37] border-2 border-white dark:border-[#1a1a1a] rounded-full shadow-sm"></div>
+                                            {/* Online/Offline indicator */}
+                                            {(() => {
+                                                const otherUserId = currentRole === 'CITIZEN' ? session.providerId : session.citizenId;
+                                                const isOtherOnline = otherUserId ? onlineUsers.get(otherUserId) : false;
+                                                return (
+                                                    <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-[#1a1a1a] rounded-full shadow-sm ${
+                                                        isOtherOnline ? 'bg-green-500' : 'bg-gray-400'
+                                                    }`} title={isOtherOnline ? 'Online' : 'Offline'}></div>
+                                                );
+                                            })()}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between mb-1">
@@ -643,11 +795,26 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                                         {getSessionDisplayName(currentSession)}
                                     </h3>
                                     <p className="text-xs text-[#D4AF37] font-medium">
-                                        {typingUsers.size > 0 ? "typing..." : "online • Secure Channel"}
+                                        {typingUsers.size > 0 
+                                            ? "typing..." 
+                                            : isOtherUserOnline 
+                                                ? "online • Secure Channel" 
+                                                : "offline • Secure Channel"}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick={toggleOnlineStatus}
+                                    className={`p-2 rounded-full transition-colors ${
+                                        isOnline
+                                            ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                            : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-[#222]'
+                                    }`}
+                                    title={isOnline ? "Go Offline" : "Go Online"}
+                                >
+                                    {isOnline ? <FiWifi size={20} /> : <FiWifiOff size={20} />}
+                                </button>
                                 <button
                                     onClick={handleVideoCall}
                                     className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-[#D4AF37] rounded-full transition-colors"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from "../../context/ThemeContext.jsx";
 import axiosClient from "../../api/axiosClient";
 import { FiTrendingUp, FiShield, FiUsers, FiActivity, FiDatabase, FiCheckCircle, FiFileText, FiUser, FiBarChart2, FiPieChart, FiMapPin, FiMail, FiPhone, FiMap } from "react-icons/fi";
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap } from "react-leaflet";
@@ -34,6 +35,7 @@ import {
 } from "recharts";
 
 export default function AdminOverview() {
+  const { theme } = useTheme();
   const [stats, setStats] = useState({
     totalCases: 0,
     totalCitizens: 0,
@@ -324,16 +326,16 @@ export default function AdminOverview() {
   return (
     <div className="space-y-10 font-sans">
       {/* WELCOME CARD */}
-      <div className="bg-[#1a1a1a] border border-[#333] rounded-3xl p-10 shadow-2xl relative overflow-hidden group">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-3xl p-10 shadow-2xl relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:opacity-10 transition-opacity">
           <FiShield size={140} className="text-[#D4AF37]" />
         </div>
 
         <div className="relative z-10 max-w-2xl">
           <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-3 block">System Administrator Command</span>
-          <h1 className="text-4xl font-bold text-white font-serif tracking-tight mb-4">Supreme Governance Console</h1>
-          <p className="text-gray-500 text-lg leading-relaxed mb-8">
-            Overseeing <span className="text-white font-bold">{stats.totalCases} cases</span>, <span className="text-white font-bold">{stats.totalCitizens} citizens</span>, <span className="text-white font-bold">{stats.lawyers} legal practitioners</span>, and <span className="text-white font-bold">{stats.ngos} social organizations</span>. Network integrity is steady.
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white font-serif tracking-tight mb-4">Supreme Governance Console</h1>
+          <p className="text-gray-600 dark:text-gray-500 text-lg leading-relaxed mb-8">
+            Overseeing <span className="text-gray-900 dark:text-white font-bold">{stats.totalCases} cases</span>, <span className="text-gray-900 dark:text-white font-bold">{stats.totalCitizens} citizens</span>, <span className="text-gray-900 dark:text-white font-bold">{stats.lawyers} legal practitioners</span>, and <span className="text-gray-900 dark:text-white font-bold">{stats.ngos} social organizations</span>. Network integrity is steady.
           </p>
           <button
             onClick={importBarCouncilData}
@@ -353,35 +355,35 @@ export default function AdminOverview() {
       </div>
 
       {/* INTERACTIVE MAP */}
-      <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <FiMap className="text-[#D4AF37] w-6 h-6" />
-            <h3 className="font-bold text-white font-serif tracking-tight text-xl">Geographic Distribution Map</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">Geographic Distribution Map</h3>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-[#3498DB] border-2 border-white"></div>
-              <span className="text-sm text-gray-400">Lawyers</span>
+              <div className="w-4 h-4 rounded-full bg-[#3498DB] border-2 border-white dark:border-white"></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Lawyers</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-[#2ECC71] border-2 border-white"></div>
-              <span className="text-sm text-gray-400">NGOs</span>
+              <div className="w-4 h-4 rounded-full bg-[#2ECC71] border-2 border-white dark:border-white"></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">NGOs</span>
             </div>
           </div>
         </div>
 
         {mapLoading ? (
-          <div className="bg-[#111] border border-[#222] rounded-xl p-8 text-center">
-            <p className="text-gray-400">Loading map data...</p>
+          <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400">Loading map data...</p>
           </div>
         ) : (
-          <div className="bg-[#111] border border-[#222] rounded-xl overflow-hidden" style={{ height: "600px" }}>
+          <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl overflow-hidden" style={{ height: "600px" }}>
             <MapContainer
               center={[20.5937, 78.9629]} // Center of India
               zoom={5}
               style={{ height: "100%", width: "100%", zIndex: 0 }}
-              className="dark-map"
+              className={theme === 'dark' ? "dark-map" : "light-map"}
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -401,21 +403,21 @@ export default function AdminOverview() {
                     direction="top"
                     offset={[0, -10]}
                   >
-                    <div className="p-2 bg-[#1a1a1a] text-white border border-[#333] rounded-lg shadow-xl min-w-[200px]">
+                    <div className="p-2 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white border border-gray-200 dark:border-[#333] rounded-lg shadow-xl min-w-[200px]">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-2 h-2 rounded-full bg-[#3498DB]"></div>
                         <h4 className="font-bold text-sm text-[#D4AF37]">{lawyer.fullName || "Lawyer"}</h4>
                       </div>
                       <div className="text-xs space-y-1">
-                        <p className="text-gray-300"><span className="text-gray-500">Specialization:</span> {lawyer.specialization || "N/A"}</p>
-                        <p className="text-gray-300"><span className="text-gray-500">Location:</span> {lawyer.city || "N/A"}, {lawyer.state || "N/A"}</p>
-                        <p className="text-gray-300"><span className="text-gray-500">Contact:</span> {lawyer.mobileNum || "N/A"}</p>
+                        <p className="text-gray-700 dark:text-gray-300"><span className="text-gray-500 dark:text-gray-500">Specialization:</span> {lawyer.specialization || "N/A"}</p>
+                        <p className="text-gray-700 dark:text-gray-300"><span className="text-gray-500 dark:text-gray-500">Location:</span> {lawyer.city || "N/A"}, {lawyer.state || "N/A"}</p>
+                        <p className="text-gray-700 dark:text-gray-300"><span className="text-gray-500 dark:text-gray-500">Contact:</span> {lawyer.mobileNum || "N/A"}</p>
                       </div>
                     </div>
                   </LeafletTooltip>
                   <Popup className="custom-popup">
-                    <div className="p-3 bg-[#1a1a1a] text-white min-w-[250px]">
-                      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#333]">
+                    <div className="p-3 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white min-w-[250px]">
+                      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 dark:border-[#333]">
                         <div className="w-3 h-3 rounded-full bg-[#3498DB]"></div>
                         <h4 className="font-bold text-lg text-[#D4AF37]">{lawyer.fullName || "Lawyer"}</h4>
                       </div>
@@ -423,44 +425,44 @@ export default function AdminOverview() {
                         <div className="flex items-start gap-2">
                           <FiBriefcaseIcon className="text-[#3498DB] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Specialization</p>
-                            <p className="text-white">{lawyer.specialization || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Specialization</p>
+                            <p className="text-gray-900 dark:text-white">{lawyer.specialization || "N/A"}</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
                           <FiMapPin className="text-[#3498DB] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Location</p>
-                            <p className="text-white">{lawyer.city || "N/A"}, {lawyer.state || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Location</p>
+                            <p className="text-gray-900 dark:text-white">{lawyer.city || "N/A"}, {lawyer.state || "N/A"}</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
                           <FiPhone className="text-[#3498DB] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Contact</p>
-                            <p className="text-white">{lawyer.mobileNum || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Contact</p>
+                            <p className="text-gray-900 dark:text-white">{lawyer.mobileNum || "N/A"}</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
                           <FiMail className="text-[#3498DB] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Email</p>
-                            <p className="text-white break-all">{lawyer.email || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Email</p>
+                            <p className="text-gray-900 dark:text-white break-all">{lawyer.email || "N/A"}</p>
                           </div>
                         </div>
                         {lawyer.experienceYears && (
                           <div className="flex items-start gap-2">
                             <FiTrendingUp className="text-[#3498DB] mt-1 flex-shrink-0" />
                             <div>
-                              <p className="text-gray-400 text-xs uppercase tracking-wider">Experience</p>
-                              <p className="text-white">{lawyer.experienceYears} years</p>
+                              <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Experience</p>
+                              <p className="text-gray-900 dark:text-white">{lawyer.experienceYears} years</p>
                             </div>
                           </div>
                         )}
-                        <div className="pt-2 mt-2 border-t border-[#333]">
+                        <div className="pt-2 mt-2 border-t border-gray-200 dark:border-[#333]">
                           <span className={`px-2 py-1 rounded text-xs font-bold ${lawyer.verificationStatus
-                            ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                            : "bg-gray-500/20 text-gray-400 border border-gray-500/30"
+                            ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30"
+                            : "bg-gray-500/20 text-gray-600 dark:text-gray-400 border border-gray-500/30"
                             }`}>
                             {lawyer.verificationStatus ? "✓ Verified" : "Unverified"}
                           </span>
@@ -484,21 +486,21 @@ export default function AdminOverview() {
                     direction="top"
                     offset={[0, -10]}
                   >
-                    <div className="p-2 bg-[#1a1a1a] text-white border border-[#333] rounded-lg shadow-xl min-w-[200px]">
+                    <div className="p-2 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white border border-gray-200 dark:border-[#333] rounded-lg shadow-xl min-w-[200px]">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-2 h-2 rounded-full bg-[#2ECC71]"></div>
                         <h4 className="font-bold text-sm text-[#D4AF37]">{ngo.ngoName || "NGO"}</h4>
                       </div>
                       <div className="text-xs space-y-1">
-                        <p className="text-gray-300"><span className="text-gray-500">Type:</span> {ngo.ngoType || "N/A"}</p>
-                        <p className="text-gray-300"><span className="text-gray-500">Location:</span> {ngo.city || "N/A"}, {ngo.state || "N/A"}</p>
-                        <p className="text-gray-300"><span className="text-gray-500">Contact:</span> {ngo.contact || "N/A"}</p>
+                        <p className="text-gray-700 dark:text-gray-300"><span className="text-gray-500 dark:text-gray-500">Type:</span> {ngo.ngoType || "N/A"}</p>
+                        <p className="text-gray-700 dark:text-gray-300"><span className="text-gray-500 dark:text-gray-500">Location:</span> {ngo.city || "N/A"}, {ngo.state || "N/A"}</p>
+                        <p className="text-gray-700 dark:text-gray-300"><span className="text-gray-500 dark:text-gray-500">Contact:</span> {ngo.contact || "N/A"}</p>
                       </div>
                     </div>
                   </LeafletTooltip>
                   <Popup className="custom-popup">
-                    <div className="p-3 bg-[#1a1a1a] text-white min-w-[250px]">
-                      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#333]">
+                    <div className="p-3 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white min-w-[250px]">
+                      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 dark:border-[#333]">
                         <div className="w-3 h-3 rounded-full bg-[#2ECC71]"></div>
                         <h4 className="font-bold text-lg text-[#D4AF37]">{ngo.ngoName || "NGO"}</h4>
                       </div>
@@ -506,44 +508,44 @@ export default function AdminOverview() {
                         <div className="flex items-start gap-2">
                           <FiUsers className="text-[#2ECC71] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Type</p>
-                            <p className="text-white">{ngo.ngoType || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Type</p>
+                            <p className="text-gray-900 dark:text-white">{ngo.ngoType || "N/A"}</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
                           <FiMapPin className="text-[#2ECC71] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Location</p>
-                            <p className="text-white">{ngo.city || "N/A"}, {ngo.state || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Location</p>
+                            <p className="text-gray-900 dark:text-white">{ngo.city || "N/A"}, {ngo.state || "N/A"}</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
                           <FiPhone className="text-[#2ECC71] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Contact</p>
-                            <p className="text-white">{ngo.contact || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Contact</p>
+                            <p className="text-gray-900 dark:text-white">{ngo.contact || "N/A"}</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
                           <FiMail className="text-[#2ECC71] mt-1 flex-shrink-0" />
                           <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider">Email</p>
-                            <p className="text-white break-all">{ngo.email || "N/A"}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Email</p>
+                            <p className="text-gray-900 dark:text-white break-all">{ngo.email || "N/A"}</p>
                           </div>
                         </div>
                         {ngo.registrationNumber && (
                           <div className="flex items-start gap-2">
                             <FiCheckCircle className="text-[#2ECC71] mt-1 flex-shrink-0" />
                             <div>
-                              <p className="text-gray-400 text-xs uppercase tracking-wider">Registration</p>
-                              <p className="text-white text-xs">{ngo.registrationNumber}</p>
+                              <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Registration</p>
+                              <p className="text-gray-900 dark:text-white text-xs">{ngo.registrationNumber}</p>
                             </div>
                           </div>
                         )}
-                        <div className="pt-2 mt-2 border-t border-[#333]">
+                        <div className="pt-2 mt-2 border-t border-gray-200 dark:border-[#333]">
                           <span className={`px-2 py-1 rounded text-xs font-bold ${ngo.verificationStatus
-                            ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                            : "bg-gray-500/20 text-gray-400 border border-gray-500/30"
+                            ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30"
+                            : "bg-gray-500/20 text-gray-600 dark:text-gray-400 border border-gray-500/30"
                             }`}>
                             {ngo.verificationStatus ? "✓ Verified" : "Unverified"}
                           </span>
@@ -557,7 +559,7 @@ export default function AdminOverview() {
           </div>
         )}
 
-        <div className="mt-4 text-xs text-gray-500 text-center">
+        <div className="mt-4 text-xs text-gray-600 dark:text-gray-500 text-center">
           Showing {lawyers.length} lawyers and {ngos.length} NGOs with location data
         </div>
       </div>
@@ -566,16 +568,16 @@ export default function AdminOverview() {
       {!analyticsLoading && analytics && Object.keys(analytics).length > 0 && (
         <div className="space-y-6">
           {/* Cases Analytics */}
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl">
+          <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-6">
               <FiBarChart2 className="text-[#D4AF37] w-6 h-6" />
-              <h3 className="font-bold text-white font-serif tracking-tight text-xl">Cases Analytics</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">Cases Analytics</h3>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Cases by Specialization */}
               {analytics.casesBySpecialization && Object.keys(analytics.casesBySpecialization).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases by Specialization</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases by Specialization</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
@@ -595,16 +597,16 @@ export default function AdminOverview() {
                         ))}
                       </Pie>
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: "12px", color: "#ccc" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", color: theme === 'dark' ? "#ccc" : "#666" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -612,21 +614,21 @@ export default function AdminOverview() {
 
               {/* Cases by Type */}
               {analytics.casesByType && Object.keys(analytics.casesByType).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases by Type</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases by Type</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={objectToChartData(analytics.casesByType)}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" strokeOpacity={0.2} />
-                      <XAxis tick={{ fill: '#9CA3AF' }} dataKey="name" stroke="#888" fontSize={11} />
-                      <YAxis tick={{ fill: '#9CA3AF' }} stroke="#888" fontSize={11} width={30} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? "#333" : "#e5e7eb"} strokeOpacity={0.2} />
+                      <XAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dataKey="name" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={11} />
+                      <YAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={11} width={30} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#FF6B6B" radius={[8, 8, 0, 0]} />
@@ -637,8 +639,8 @@ export default function AdminOverview() {
 
               {/* Cases by Status */}
               {analytics.casesByStatus && Object.keys(analytics.casesByStatus).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases by Status</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases by Status</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
@@ -658,16 +660,16 @@ export default function AdminOverview() {
                         ))}
                       </Pie>
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: "12px", color: "#ccc" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", color: theme === 'dark' ? "#ccc" : "#666" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -675,21 +677,21 @@ export default function AdminOverview() {
 
               {/* Cases by Urgency */}
               {analytics.casesByUrgency && Object.keys(analytics.casesByUrgency).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases by Urgency</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases by Urgency</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={objectToChartData(analytics.casesByUrgency)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis dataKey="name" stroke="#888" fontSize={12} />
-                      <YAxis stroke="#888" fontSize={12} />
+                      <XAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dataKey="name" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
+                      <YAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#FF6B6B" radius={[8, 8, 0, 0]} />
@@ -700,8 +702,8 @@ export default function AdminOverview() {
 
               {/* Cases by Victim Gender */}
               {analytics.casesByGender && Object.keys(analytics.casesByGender).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases by Victim Gender</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases by Victim Gender</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
@@ -721,16 +723,16 @@ export default function AdminOverview() {
                         ))}
                       </Pie>
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: "12px", color: "#ccc" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", color: theme === 'dark' ? "#ccc" : "#666" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -738,21 +740,21 @@ export default function AdminOverview() {
 
               {/* Cases by Age Group */}
               {analytics.casesByAgeGroup && Object.keys(analytics.casesByAgeGroup).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases by Victim Age Group</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases by Victim Age Group</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={objectToChartData(analytics.casesByAgeGroup)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis dataKey="name" stroke="#888" fontSize={12} />
-                      <YAxis stroke="#888" fontSize={12} />
+                      <XAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dataKey="name" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
+                      <YAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#4ECDC4" radius={[8, 8, 0, 0]} />
@@ -763,21 +765,21 @@ export default function AdminOverview() {
 
               {/* Cases by Court Type */}
               {analytics.casesByCourtType && Object.keys(analytics.casesByCourtType).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases by Court Type</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases by Court Type</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={objectToChartData(analytics.casesByCourtType)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis tick={{ fill: '#9CA3AF' }} dataKey="name" stroke="#888" fontSize={11} angle={-45} textAnchor="end" height={80} />
-                      <YAxis stroke="#888" fontSize={12} />
+                      <XAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dataKey="name" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={11} angle={-45} textAnchor="end" height={80} />
+                      <YAxis stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#9B59B6" radius={[8, 8, 0, 0]} />
@@ -788,8 +790,8 @@ export default function AdminOverview() {
 
               {/* Cases Seeking NGO Help */}
               {analytics.casesSeekingNGO && Object.keys(analytics.casesSeekingNGO).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cases Seeking NGO Help</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Cases Seeking NGO Help</h4>
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
@@ -809,16 +811,16 @@ export default function AdminOverview() {
                         ))}
                       </Pie>
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: "12px", color: "#ccc" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", color: theme === 'dark' ? "#ccc" : "#666" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -827,29 +829,29 @@ export default function AdminOverview() {
           </div>
 
           {/* Lawyers Analytics */}
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl">
+          <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-6">
               <FiBriefcaseIcon className="text-[#D4AF37] w-6 h-6" />
-              <h3 className="font-bold text-white font-serif tracking-tight text-xl">Lawyers Analytics</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">Lawyers Analytics</h3>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Lawyers by Specialization */}
               {analytics.lawyersBySpecialization && Object.keys(analytics.lawyersBySpecialization).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Lawyers by Specialization</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Lawyers by Specialization</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={objectToChartData(analytics.lawyersBySpecialization)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                       <XAxis dataKey="name" stroke="#888" fontSize={12} angle={-45} textAnchor="end" height={80} />
                       <YAxis stroke="#888" fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#FF6B6B" radius={[8, 8, 0, 0]} />
@@ -860,8 +862,8 @@ export default function AdminOverview() {
 
               {/* Lawyers by Verification */}
               {analytics.lawyersByVerification && Object.keys(analytics.lawyersByVerification).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Lawyers by Verification Status</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Lawyers by Verification Status</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
@@ -881,16 +883,16 @@ export default function AdminOverview() {
                         ))}
                       </Pie>
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: "12px", color: "#ccc" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", color: theme === 'dark' ? "#ccc" : "#666" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -898,21 +900,21 @@ export default function AdminOverview() {
 
               {/* Lawyers by City (Top 10) */}
               {analytics.lawyersByCity && Object.keys(analytics.lawyersByCity).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Top 10 Cities - Lawyers</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Top 10 Cities - Lawyers</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={objectToChartData(analytics.lawyersByCity)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                       <XAxis dataKey="name" stroke="#888" fontSize={12} angle={-45} textAnchor="end" height={80} />
                       <YAxis stroke="#888" fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#45B7D1" radius={[8, 8, 0, 0]} />
@@ -923,21 +925,21 @@ export default function AdminOverview() {
 
               {/* Lawyers by Experience */}
               {analytics.lawyersByExperience && Object.keys(analytics.lawyersByExperience).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Lawyers by Experience</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Lawyers by Experience</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={objectToChartData(analytics.lawyersByExperience)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis dataKey="name" stroke="#888" fontSize={12} />
-                      <YAxis stroke="#888" fontSize={12} />
+                      <XAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dataKey="name" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
+                      <YAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#2ECC71" radius={[8, 8, 0, 0]} />
@@ -949,29 +951,29 @@ export default function AdminOverview() {
           </div>
 
           {/* NGOs Analytics */}
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl">
+          <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-6">
               <FiUsers className="text-[#D4AF37] w-6 h-6" />
-              <h3 className="font-bold text-white font-serif tracking-tight text-xl">NGOs Analytics</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">NGOs Analytics</h3>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* NGOs by Type */}
               {analytics.ngosByType && Object.keys(analytics.ngosByType).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">NGOs by Type</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">NGOs by Type</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={objectToChartData(analytics.ngosByType)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                       <XAxis dataKey="name" stroke="#888" fontSize={12} angle={-45} textAnchor="end" height={80} />
                       <YAxis stroke="#888" fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#FF6B6B" radius={[8, 8, 0, 0]} />
@@ -982,8 +984,8 @@ export default function AdminOverview() {
 
               {/* NGOs by Verification */}
               {analytics.ngosByVerification && Object.keys(analytics.ngosByVerification).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">NGOs by Verification Status</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">NGOs by Verification Status</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
@@ -1003,16 +1005,16 @@ export default function AdminOverview() {
                         ))}
                       </Pie>
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: "12px", color: "#ccc" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", color: theme === 'dark' ? "#ccc" : "#666" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -1020,21 +1022,21 @@ export default function AdminOverview() {
 
               {/* NGOs by City (Top 10) */}
               {analytics.ngosByCity && Object.keys(analytics.ngosByCity).length > 0 && (
-                <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Top 10 Cities - NGOs</h4>
+                <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Top 10 Cities - NGOs</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={objectToChartData(analytics.ngosByCity)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                       <XAxis dataKey="name" stroke="#888" fontSize={12} angle={-45} textAnchor="end" height={80} />
                       <YAxis stroke="#888" fontSize={12} />
                       <Tooltip
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
                         labelStyle={{ color: '#D4AF37' }}
                         contentStyle={{
-                          backgroundColor: "#1a1a1a",
-                          border: "1px solid #333",
+                          backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                          border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                           borderRadius: "8px",
-                          color: "#fff",
+                          color: theme === 'dark' ? "#fff" : "#000",
                         }}
                       />
                       <Bar dataKey="value" fill="#1ABC9C" radius={[8, 8, 0, 0]} />
@@ -1047,12 +1049,12 @@ export default function AdminOverview() {
 
           {/* Time-based Analytics - Daily Trends */}
           {(analytics.casesOverTime || analytics.lawyersOverTime || analytics.ngosOverTime) && (
-            <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl">
               <div className="flex items-center gap-3 mb-6">
                 <FiTrendingUp className="text-[#D4AF37] w-6 h-6" />
-                <h3 className="font-bold text-white font-serif tracking-tight text-xl">Daily Registration Trends (Last 30 Days)</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">Daily Registration Trends (Last 30 Days)</h3>
               </div>
-              <div className="bg-[#111] border border-[#222] rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
                 <ResponsiveContainer width="100%" height={400}>
                   <AreaChart
                     data={combineTimeData(analytics.casesOverTime, analytics.lawyersOverTime, analytics.ngosOverTime)}
@@ -1094,7 +1096,7 @@ export default function AdminOverview() {
                       }}
                     />
                     <Legend
-                      wrapperStyle={{ color: "#fff", paddingTop: "20px" }}
+                      wrapperStyle={{ color: theme === 'dark' ? "#fff" : "#000", paddingTop: "20px" }}
                     />
                     {analytics.casesOverTime && (
                       <Area
@@ -1134,17 +1136,17 @@ export default function AdminOverview() {
 
           {/* Weekly Trends */}
           {analytics.weeklyTrends && Object.keys(analytics.weeklyTrends).length > 0 && (
-            <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl">
               <div className="flex items-center gap-3 mb-6">
                 <FiBarChart2 className="text-[#D4AF37] w-6 h-6" />
-                <h3 className="font-bold text-white font-serif tracking-tight text-xl">Weekly Registration Trends (Last 4 Weeks)</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">Weekly Registration Trends (Last 4 Weeks)</h3>
               </div>
-              <div className="bg-[#111] border border-[#222] rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
                 <ResponsiveContainer width="100%" height={350}>
                   <ComposedChart data={weeklyTrendsToChartData(analytics.weeklyTrends)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis tick={{ fill: '#9CA3AF' }} dataKey="week" stroke="#888" fontSize={11} />
-                    <YAxis stroke="#888" fontSize={12} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? "#333" : "#e5e7eb"} />
+                    <XAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dataKey="week" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={11} />
+                    <YAxis stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
                     <Tooltip
                       itemStyle={{ color: '#fff' }}
                       labelStyle={{ color: '#D4AF37' }}
@@ -1156,7 +1158,7 @@ export default function AdminOverview() {
                       }}
                     />
                     <Legend
-                      wrapperStyle={{ color: "#fff" }}
+                      wrapperStyle={{ color: theme === 'dark' ? "#fff" : "#000" }}
                     />
                     <Bar dataKey="Cases" fill="#D4AF37" radius={[8, 8, 0, 0]} />
                     <Bar dataKey="Lawyers" fill="#3498DB" radius={[8, 8, 0, 0]} />
@@ -1169,26 +1171,28 @@ export default function AdminOverview() {
 
           {/* Geographic Distribution */}
           {(analytics.lawyersByState || analytics.ngosByState) && (
-            <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl">
               <div className="flex items-center gap-3 mb-6">
                 <FiUsers className="text-[#D4AF37] w-6 h-6" />
-                <h3 className="font-bold text-white font-serif tracking-tight text-xl">Geographic Distribution by State</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">Geographic Distribution by State</h3>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {analytics.lawyersByState && Object.keys(analytics.lawyersByState).length > 0 && (
-                  <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                    <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Lawyers by State</h4>
+                  <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">Lawyers by State</h4>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={objectToChartData(analytics.lawyersByState)}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                        <XAxis tick={{ fill: '#9CA3AF' }} dataKey="name" stroke="#888" fontSize={10} angle={-45} textAnchor="end" height={100} />
-                        <YAxis stroke="#888" fontSize={12} />
+                        <XAxis tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dataKey="name" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={10} angle={-45} textAnchor="end" height={100} />
+                        <YAxis stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
                         <Tooltip
+                          itemStyle={{ color: theme === 'dark' ? '#fff' : '#000' }}
+                          labelStyle={{ color: '#D4AF37' }}
                           contentStyle={{
-                            backgroundColor: "#1a1a1a",
-                            border: "1px solid #333",
+                            backgroundColor: theme === 'dark' ? "#1a1a1a" : "#fff",
+                            border: theme === 'dark' ? "1px solid #333" : "1px solid #e5e7eb",
                             borderRadius: "8px",
-                            color: "#fff",
+                            color: theme === 'dark' ? "#fff" : "#000",
                           }}
                         />
                         <Bar dataKey="value" fill="#E74C3C" radius={[8, 8, 0, 0]} />
@@ -1197,13 +1201,13 @@ export default function AdminOverview() {
                   </div>
                 )}
                 {analytics.ngosByState && Object.keys(analytics.ngosByState).length > 0 && (
-                  <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-                    <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">NGOs by State</h4>
+                  <div className="bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl p-4">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-400 mb-4 uppercase tracking-wider">NGOs by State</h4>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={objectToChartData(analytics.ngosByState)}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                        <XAxis dataKey="name" stroke="#888" fontSize={11} angle={-45} textAnchor="end" height={100} />
-                        <YAxis stroke="#888" fontSize={12} />
+                        <XAxis dataKey="name" stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={11} angle={-45} textAnchor="end" height={100} />
+                        <YAxis stroke={theme === 'dark' ? "#888" : "#9CA3AF"} fontSize={12} />
                         <Tooltip
                           itemStyle={{ color: '#fff' }}
                           labelStyle={{ color: '#D4AF37' }}
@@ -1226,15 +1230,15 @@ export default function AdminOverview() {
       )}
 
       {analyticsLoading && (
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-8 shadow-xl text-center">
-          <p className="text-gray-400">Loading analytics...</p>
+        <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-xl text-center">
+          <p className="text-gray-600 dark:text-gray-400">Loading analytics...</p>
         </div>
       )}
 
       {!analyticsLoading && (!analytics || Object.keys(analytics).length === 0) && (
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-8 shadow-xl text-center">
-          <p className="text-gray-400 mb-2">No analytics data available</p>
-          <p className="text-gray-500 text-sm mb-4">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-xl text-center">
+          <p className="text-gray-600 dark:text-gray-400 mb-2">No analytics data available</p>
+          <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">
             Please ensure:
             <br />1. The backend is running
             <br />2. The backend has been restarted to load the new /admin/analytics endpoint
@@ -1250,30 +1254,30 @@ export default function AdminOverview() {
       )}
 
       {/* RECENT ACTIVITY */}
-      <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-8 relative overflow-hidden shadow-xl">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-8 relative overflow-hidden shadow-xl">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <FiActivity className="text-[#D4AF37] w-6 h-6" />
-            <h3 className="font-bold text-white font-serif tracking-tight text-xl">Real-time Telemetry</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-xl">Real-time Telemetry</h3>
           </div>
           <span className="text-[10px] font-black text-green-500 uppercase tracking-widest bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20 animate-pulse">
             Relay Active
           </span>
         </div>
         <div className="space-y-4">
-          <div className="p-4 bg-[#111] border border-[#222] rounded-xl flex items-center justify-between group hover:border-[#D4AF37]/30 transition-all">
+          <div className="p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl flex items-center justify-between group hover:border-[#D4AF37]/30 transition-all">
             <div className="flex items-center gap-4">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-400 font-medium">Global encryption channels initialized.</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Global encryption channels initialized.</span>
             </div>
-            <span className="text-[10px] font-bold text-gray-600">Just Now</span>
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-600">Just Now</span>
           </div>
-          <div className="p-4 bg-[#111] border border-[#222] rounded-xl flex items-center justify-between group hover:border-[#D4AF37]/30 transition-all">
+          <div className="p-4 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-xl flex items-center justify-between group hover:border-[#D4AF37]/30 transition-all">
             <div className="flex items-center gap-4">
               <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
-              <span className="text-sm text-gray-400 font-medium">Administrative session started in root tier.</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Administrative session started in root tier.</span>
             </div>
-            <span className="text-[10px] font-bold text-gray-600">2m Ago</span>
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-600">2m Ago</span>
           </div>
         </div>
       </div>
@@ -1297,8 +1301,8 @@ const mapStyles = `
     padding: 0;
   }
   .custom-popup .leaflet-popup-tip {
-    background: #1a1a1a;
-    border: 1px solid #333;
+    background: var(--popup-bg, #1a1a1a);
+    border: 1px solid var(--popup-border, #333);
   }
   .custom-tooltip .leaflet-tooltip-content-wrapper {
     background: transparent;
@@ -1311,11 +1315,14 @@ const mapStyles = `
     padding: 0;
   }
   .custom-tooltip .leaflet-tooltip-tip-section {
-    background: #1a1a1a;
-    border: 1px solid #333;
+    background: var(--tooltip-bg, #1a1a1a);
+    border: 1px solid var(--tooltip-border, #333);
   }
   .dark-map .leaflet-container {
     background: #111;
+  }
+  .light-map .leaflet-container {
+    background: #f9fafb;
   }
   .custom-marker {
     background: transparent !important;
@@ -1340,13 +1347,13 @@ if (typeof document !== 'undefined') {
 
 /* ===== STAT CARD ===== */
 const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 shadow-xl flex items-center gap-5 hover:border-[#D4AF37]/50 transition-all duration-300 group">
-    <div className={`w-14 h-14 bg-[#111] border border-[#222] rounded-2xl flex items-center justify-center ${color || 'text-[#D4AF37]'} group-hover:scale-110 transition-transform shadow-inner`}>
+  <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-xl flex items-center gap-5 hover:border-[#D4AF37]/50 transition-all duration-300 group">
+    <div className={`w-14 h-14 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222] rounded-2xl flex items-center justify-center ${color || 'text-[#D4AF37]'} group-hover:scale-110 transition-transform shadow-inner`}>
       {icon}
     </div>
     <div>
-      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{title}</p>
-      <p className="text-3xl font-bold text-white font-serif tracking-tight">{value}</p>
+      <p className="text-[10px] font-black text-gray-500 dark:text-gray-500 uppercase tracking-widest mb-1">{title}</p>
+      <p className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight">{value}</p>
     </div>
   </div>
 );

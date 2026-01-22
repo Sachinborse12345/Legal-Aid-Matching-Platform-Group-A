@@ -67,6 +67,74 @@ public class LawyerController {
         return ResponseEntity.ok(appointmentService.getLawyerAnalytics(id));
     }
 
+    // Get simplified lawyer list for comparison dropdown
+    @GetMapping("/list")
+    public ResponseEntity<List<LawyerSummaryDTO>> getLawyersList(
+            @RequestParam(required = false) String specialization,
+            @RequestParam(required = false) String city) {
+        List<Lawyer> lawyers;
+        if (specialization != null && city != null) {
+            lawyers = lawyerRepository.findByCityAndSpecialization(city, specialization);
+        } else if (city != null) {
+            lawyers = lawyerRepository.findByCity(city);
+        } else if (specialization != null) {
+            lawyers = lawyerRepository.findBySpecialization(specialization);
+        } else {
+            lawyers = lawyerRepository.findAll();
+        }
+        
+        List<LawyerSummaryDTO> summaries = lawyers.stream()
+                .map(l -> new LawyerSummaryDTO(
+                        l.getId(),
+                        l.getFullName(),
+                        l.getSpecialization(),
+                        l.getCity(),
+                        l.getState(),
+                        l.getExperienceYears(),
+                        l.isVerificationStatus()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+        
+        return ResponseEntity.ok(summaries);
+    }
+
+    // Simple DTO for lawyer summary
+    public static class LawyerSummaryDTO {
+        private Integer id;
+        private String fullName;
+        private String specialization;
+        private String city;
+        private String state;
+        private Integer experienceYears;
+        private boolean verificationStatus;
+
+        public LawyerSummaryDTO(Integer id, String fullName, String specialization, String city, 
+                               String state, Integer experienceYears, boolean verificationStatus) {
+            this.id = id;
+            this.fullName = fullName;
+            this.specialization = specialization;
+            this.city = city;
+            this.state = state;
+            this.experienceYears = experienceYears;
+            this.verificationStatus = verificationStatus;
+        }
+
+        public Integer getId() { return id; }
+        public void setId(Integer id) { this.id = id; }
+        public String getFullName() { return fullName; }
+        public void setFullName(String fullName) { this.fullName = fullName; }
+        public String getSpecialization() { return specialization; }
+        public void setSpecialization(String specialization) { this.specialization = specialization; }
+        public String getCity() { return city; }
+        public void setCity(String city) { this.city = city; }
+        public String getState() { return state; }
+        public void setState(String state) { this.state = state; }
+        public Integer getExperienceYears() { return experienceYears; }
+        public void setExperienceYears(Integer experienceYears) { this.experienceYears = experienceYears; }
+        public boolean isVerificationStatus() { return verificationStatus; }
+        public void setVerificationStatus(boolean verificationStatus) { this.verificationStatus = verificationStatus; }
+    }
+
     // Search still returns all; frontend can show badge for verificationStatus
     @GetMapping("/search")
     public List<Lawyer> searchLawyers(

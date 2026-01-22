@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
+import { createSession } from "../../api/chatApi";
+import { toast } from "sonner";
+
 function DirectoryCard({ item, setActivePage, setSelectedRecipient, onViewProfile, onBookAppointment, appointments = [] }) {
   // item is a DirectoryEntry
   const isLawyer = item.type === "LAWYER";
@@ -58,13 +61,21 @@ function DirectoryCard({ item, setActivePage, setSelectedRecipient, onViewProfil
 
       <div className="grid grid-cols-1 gap-2 mt-2">
         <button
-          onClick={() => {
-            setActivePage("messages");
-            setSelectedRecipient({
-              type: isLawyer ? "lawyer" : "ngo",
-              id: item.id,
-              name: name,
-            });
+          onClick={async () => {
+            try {
+              const res = await createSession(null, item.id, isLawyer ? "LAWYER" : "NGO");
+              const session = res.data;
+              setSelectedRecipient({
+                type: isLawyer ? "lawyer" : "ngo",
+                id: item.id,
+                name: name,
+                sessionId: session.id
+              });
+              setActivePage("messages");
+            } catch (err) {
+              console.error("Failed to start chat:", err);
+              toast.error("Failed to start conversation. Please try again.");
+            }
           }}
           className="w-full bg-[#234f4a] hover:bg-[#1a3b37] dark:bg-[#234f4a] dark:hover:bg-[#1a3b37] text-white py-2 rounded-lg text-sm font-medium transition-colors"
         >

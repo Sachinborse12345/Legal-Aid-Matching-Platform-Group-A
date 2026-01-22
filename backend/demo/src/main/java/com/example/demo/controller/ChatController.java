@@ -19,7 +19,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/chat")
-
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:3000", "http://127.0.0.1:3000"})
 public class ChatController {
 
     private final ChatSessionRepository chatSessionRepository;
@@ -74,7 +74,7 @@ public class ChatController {
         }
     }
 
-    // Create a new chat session (only if matched)
+    // Create a new chat session (matched or direct)
     @PostMapping("/sessions")
     public ResponseEntity<?> createSession(
             @RequestHeader("Authorization") String authHeader,
@@ -89,46 +89,79 @@ public class ChatController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only citizens can initiate chat sessions");
             }
 
-            Long caseId = Long.valueOf(requestData.get("caseId").toString());
+            // Handle optional caseId
+            Long caseId = null;
+            if (requestData.get("caseId") != null && !String.valueOf(requestData.get("caseId")).equals("null")) {
+                caseId = Long.valueOf(requestData.get("caseId").toString());
+            }
+
             Integer providerId = Integer.valueOf(requestData.get("providerId").toString());
             String providerRole = requestData.get("providerRole").toString(); // LAWYER or NGO
 
-            // Verify if provider is a match
-            Map<String, Object> matches = matchingService.findMatchesForCase(caseId);
-            boolean isMatched = false;
             String foundProviderName = null;
 
-            if ("LAWYER".equalsIgnoreCase(providerRole)) {
-                List<com.example.demo.entity.Lawyer> lawyers = (List<com.example.demo.entity.Lawyer>) matches
-                        .get("lawyers");
-                if (lawyers != null) {
-                    Optional<com.example.demo.entity.Lawyer> l = lawyers.stream()
-                            .filter(law -> law.getId().equals(providerId)).findFirst();
-                    if (l.isPresent()) {
-                        isMatched = true;
-                        foundProviderName = l.get().getFullName();
-                    }
-                }
-            } else if ("NGO".equalsIgnoreCase(providerRole)) {
-                List<com.example.demo.entity.NGO> ngos = (List<com.example.demo.entity.NGO>) matches.get("ngos");
-                if (ngos != null) {
-                    Optional<com.example.demo.entity.NGO> n = ngos.stream()
-                            .filter(ngo -> ngo.getId().equals(providerId)).findFirst();
-                    if (n.isPresent()) {
-                        isMatched = true;
-                        foundProviderName = n.get().getNgoName();
-                    }
-                }
-            }
+            // Only enforce matching if caseId is present
+            if (caseId != null) {
+                // Verify if provider is a match
+                Map<String, Object> matches = matchingService.findMatchesForCase(caseId);
+                final boolean[] isMatched = {false};
+                final String[] providerNameHolder = {null};
 
-            if (!isMatched) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Chat can only be started with matched legal providers");
+                if ("LAWYER".equalsIgnoreCase(providerRole)) {
+                    List<com.example.demo.entity.Lawyer> lawyers = (List<com.example.demo.entity.Lawyer>) matches
+                            .get("lawyers");
+                    if (lawyers != null) {
+                        Optional<com.example.demo.entity.Lawyer> l = lawyers.stream()
+                                .filter(law -> law.getId().equals(providerId)).findFirst();
+                        if (l.isPresent()) {
+                            isMatched[0] = true;
+                            providerNameHolder[0] = l.get().getFullName();
+                        }
+                    }
+                } else if ("NGO".equalsIgnoreCase(providerRole)) {
+                    List<com.example.demo.entity.NGO> ngos = (List<com.example.demo.entity.NGO>) matches.get("ngos");
+                    if (ngos != null) {
+                        Optional<com.example.demo.entity.NGO> n = ngos.stream()
+                                .filter(ngo -> ngo.getId().equals(providerId)).findFirst();
+                        if (n.isPresent()) {
+                            isMatched[0] = true;
+                            providerNameHolder[0] = n.get().getNgoName();
+                        }
+                    }
+                }
+
+                if (!isMatched[0]) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body("Chat can only be started with matched legal providers");
+                }
+                foundProviderName = providerNameHolder[0];
+            } else {
+                // No case ID -> General inquiry. Verify provider exists and get name.
+                if ("LAWYER".equalsIgnoreCase(providerRole)) {
+                    Optional<com.example.demo.entity.Lawyer> l = lawyerRepository.findById(providerId);
+                    if (l.isPresent())
+                        foundProviderName = l.get().getFullName();
+                    else
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lawyer not found");
+                } else if ("NGO".equalsIgnoreCase(providerRole)) {
+                    Optional<com.example.demo.entity.NGO> n = ngoRepository.findById(providerId);
+                    if (n.isPresent())
+                        foundProviderName = n.get().getNgoName();
+                    else
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("NGO not found");
+                }
             }
 
             // Check if session already exists
-            Optional<ChatSession> existing = chatSessionRepository
-                    .findByCaseIdAndCitizenIdAndProviderIdAndProviderRole(caseId, userId, providerId, providerRole);
+            Optional<ChatSession> existing;
+            if (caseId != null) {
+                existing = chatSessionRepository
+                        .findByCaseIdAndCitizenIdAndProviderIdAndProviderRole(caseId, userId, providerId, providerRole);
+            } else {
+                existing = chatSessionRepository
+                        .findByCitizenIdAndProviderIdAndProviderRoleAndCaseIdIsNull(userId, providerId, providerRole);
+            }
+
             if (existing.isPresent()) {
                 return ResponseEntity.ok(existing.get());
             }
@@ -377,5 +410,21 @@ public class ChatController {
                 "isTyping", isTyping
         );
         messagingTemplate.convertAndSend("/topic/session." + sessionId, typingEvent);
+    }
+
+    // Presence status (online/offline)
+    @MessageMapping("/chat.presence")
+    public void handlePresence(@Payload Map<String, Object> payload) {
+        Long sessionId = Long.valueOf(payload.get("sessionId").toString());
+        Integer userId = Integer.valueOf(payload.get("userId").toString());
+        Boolean isOnline = Boolean.valueOf(payload.get("isOnline").toString());
+
+        Map<String, Object> presenceEvent = Map.of(
+                "type", "PRESENCE",
+                "sessionId", sessionId,
+                "userId", userId,
+                "isOnline", isOnline
+        );
+        messagingTemplate.convertAndSend("/topic/session." + sessionId, presenceEvent);
     }
 }
