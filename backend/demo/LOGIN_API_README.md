@@ -1,14 +1,17 @@
 # Login API Documentation
 
 ## Endpoint
-**POST** `http://localhost:8080/api/auth/login`
+
+**POST** `https://advocare-backend-gkg0.onrender.com/api/auth/login`
 
 ## Headers
+
 ```
 Content-Type: application/json
 ```
 
 ## Request Body Format
+
 ```json
 {
   "username": "user@example.com",
@@ -18,11 +21,13 @@ Content-Type: application/json
 ```
 
 ## Request Fields
+
 - `username` (required): User's email address
 - `password` (required): User's password
 - `role` (required): User role - must be one of: `CITIZEN`, `LAWYER`, `NGO`, `ADMIN`
 
 ## Response Format (Success - 200 OK)
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -47,17 +52,20 @@ Content-Type: application/json
 ```
 
 **Note**: The `userData` object contains all user information (excluding password) based on the user's role:
+
 - **CITIZEN**: id, fullName, aadharNum, email, mobileNum, dateOfBirth, state, district, city, address
 - **LAWYER**: id, fullName, email, mobileNum, aadharNum, barCouncilId, specialization, address, state, district, city, latitude, longitude, and more
 - **NGO**: id, ngoName, ngoType, registrationNumber, contact, email, address, state, district, city, pincode, latitude, longitude, and more
 - **ADMIN**: email, username (minimal data)
 
 ## Response Format (Error - 401 Unauthorized)
+
 ```json
 "Invalid email or password"
 ```
 
 ## Response Format (Error - 400 Bad Request)
+
 ```json
 "Email, password, and role are required"
 ```
@@ -65,8 +73,9 @@ Content-Type: application/json
 ## Testing with cURL
 
 ### Citizen Login
+
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "sachinborse7744@gmail.com",
@@ -76,8 +85,9 @@ curl -X POST http://localhost:8080/api/auth/login \
 ```
 
 ### Lawyer Login
+
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "lawyer@example.com",
@@ -87,8 +97,9 @@ curl -X POST http://localhost:8080/api/auth/login \
 ```
 
 ### NGO Login
+
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "ngo@example.com",
@@ -98,8 +109,9 @@ curl -X POST http://localhost:8080/api/auth/login \
 ```
 
 ### Admin Login
+
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin@advocare.com",
@@ -111,8 +123,8 @@ curl -X POST http://localhost:8080/api/auth/login \
 ## Testing with Postman
 
 1. **Method**: POST
-2. **URL**: `http://localhost:8080/api/auth/login`
-3. **Headers**: 
+2. **URL**: `https://advocare-backend-gkg0.onrender.com/api/auth/login`
+3. **Headers**:
    - Key: `Content-Type`
    - Value: `application/json`
 4. **Body**: Select "raw" and "JSON", then paste one of the examples from `login-request-examples.json`
@@ -122,8 +134,8 @@ curl -X POST http://localhost:8080/api/auth/login \
 See `login-request-examples.json` for ready-to-use JSON examples.
 
 ## Notes
+
 - The `username` field actually expects an email address
 - Passwords are stored in plain text in the database (for now)
 - Admin credentials are hardcoded: `admin@advocare.com` / `admin123`
 - The token returned is a JWT that should be stored and sent in subsequent requests as `Authorization: Bearer <token>`
-

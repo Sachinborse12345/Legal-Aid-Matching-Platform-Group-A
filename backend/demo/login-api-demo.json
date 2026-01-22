@@ -1,5 +1,5 @@
 {
-  "endpoint": "POST http://localhost:8080/api/auth/login",
+  "endpoint": "POST https://advocare-backend-gkg0.onrender.com/api/auth/login",
   "headers": {
     "Content-Type": "application/json"
   },
@@ -147,10 +147,10 @@
     }
   },
   "curl_examples": {
-    "citizen_login_curl": "curl -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"sachinborse7744@gmail.com\",\"password\":\"your_password\",\"role\":\"CITIZEN\"}'",
-    "lawyer_login_curl": "curl -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"lawyer@example.com\",\"password\":\"lawyer_password\",\"role\":\"LAWYER\"}'",
-    "ngo_login_curl": "curl -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"ngo@example.com\",\"password\":\"ngo_password\",\"role\":\"NGO\"}'",
-    "admin_login_curl": "curl -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"admin@advocare.com\",\"password\":\"admin123\",\"role\":\"ADMIN\"}'"
+    "citizen_login_curl": "curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"sachinborse7744@gmail.com\",\"password\":\"your_password\",\"role\":\"CITIZEN\"}'",
+    "lawyer_login_curl": "curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"lawyer@example.com\",\"password\":\"lawyer_password\",\"role\":\"LAWYER\"}'",
+    "ngo_login_curl": "curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"ngo@example.com\",\"password\":\"ngo_password\",\"role\":\"NGO\"}'",
+    "admin_login_curl": "curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"admin@advocare.com\",\"password\":\"admin123\",\"role\":\"ADMIN\"}'"
   },
   "postman_collection": {
     "info": {
@@ -173,11 +173,17 @@
             "raw": "{\n  \"username\": \"sachinborse7744@gmail.com\",\n  \"password\": \"your_password\",\n  \"role\": \"CITIZEN\"\n}"
           },
           "url": {
-            "raw": "http://localhost:8080/api/auth/login",
+            "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       },
@@ -196,11 +202,17 @@
             "raw": "{\n  \"username\": \"lawyer@example.com\",\n  \"password\": \"lawyer_password\",\n  \"role\": \"LAWYER\"\n}"
           },
           "url": {
-            "raw": "http://localhost:8080/api/auth/login",
+            "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       },
@@ -219,11 +231,17 @@
             "raw": "{\n  \"username\": \"ngo@example.com\",\n  \"password\": \"ngo_password\",\n  \"role\": \"NGO\"\n}"
           },
           "url": {
-            "raw": "http://localhost:8080/api/auth/login",
+            "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       },
@@ -242,15 +260,20 @@
             "raw": "{\n  \"username\": \"admin@advocare.com\",\n  \"password\": \"admin123\",\n  \"role\": \"ADMIN\"\n}"
           },
           "url": {
-            "raw": "http://localhost:8080/api/auth/login",
+            "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       }
     ]
   }
 }
-
