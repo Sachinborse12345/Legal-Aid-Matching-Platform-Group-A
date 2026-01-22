@@ -19,14 +19,17 @@ FROM eclipse-temurin:17-jdk-jammy
 # Set working directory
 WORKDIR /app
 
-# Copy project files
+# Copy files
 COPY . .
 
-# Build application
+# Give permission to mvnw
+RUN chmod +x mvnw
+
+# Build app
 RUN ./mvnw clean package -DskipTests
 
 # Expose port
 EXPOSE 8080
 
-# Run application
+# Run app
 CMD ["java", "-jar", "target/demo-0.0.1-SNAPSHOT.jar"]
