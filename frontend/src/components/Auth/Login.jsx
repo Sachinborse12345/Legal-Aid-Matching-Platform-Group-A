@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { loginUser, clearError } from "../../Redux/authSlice.js";
 import { toast } from "react-toastify";
 import { FiUser, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-import logo from "../../assets/LOGO.png";
+import logo from "../../assets/logo.png";
 
 export default function Login() {
   const dispatch = useDispatch();
@@ -13,12 +13,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   // Get auth state from Redux
-  const {
-    isLoading,
-    error: authError,
-    user,
-    isAuthenticated,
-  } = useSelector((state) => state.auth);
+  const { isLoading, error: authError, user, isAuthenticated } = useSelector((state) => state.auth);
 
   const successMsg = location.state?.success || null;
 
@@ -57,18 +52,14 @@ export default function Login() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     if (touched[name]) {
-      let err =
-        name === "username" ? validateEmail(value) : validatePassword(value);
+      let err = name === "username" ? validateEmail(value) : validatePassword(value);
       setErrors((prev) => ({ ...prev, [name]: err }));
     }
   };
 
   const handleBlur = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    let err =
-      field === "username"
-        ? validateEmail(form.username)
-        : validatePassword(form.password);
+    let err = field === "username" ? validateEmail(form.username) : validatePassword(form.password);
     setErrors((prev) => ({ ...prev, [field]: err }));
   };
 
@@ -77,14 +68,9 @@ export default function Login() {
       toast.success("Login successful!");
       setTimeout(() => {
         const userRole = user.role;
-        const path =
-          userRole === "CITIZEN"
-            ? "/citizen/dashboard"
-            : userRole === "LAWYER"
-              ? "/lawyer/dashboard"
-              : userRole === "NGO"
-                ? "/ngo/dashboard"
-                : "/dashboard/admin";
+        const path = userRole === "CITIZEN" ? "/citizen/dashboard" :
+          userRole === "LAWYER" ? "/lawyer/dashboard" :
+            userRole === "NGO" ? "/ngo/dashboard" : "/dashboard/admin";
         navigate(path, { state: { success: `Welcome ${userRole}` } });
       }, 500);
     }
@@ -119,13 +105,7 @@ export default function Login() {
       return;
     }
 
-    await dispatch(
-      loginUser({
-        username: form.username,
-        password: form.password,
-        role: form.role,
-      }),
-    );
+    await dispatch(loginUser({ username: form.username, password: form.password, role: form.role }));
   };
 
   return (
@@ -147,18 +127,11 @@ export default function Login() {
 
           <div className="absolute bottom-0 left-0 p-12 text-[#E5E5E5] z-10">
             <div className="w-20 h-20 mb-6 flex items-center justify-center border-2 border-[#D4AF37]/30 rounded-full bg-black/50 backdrop-blur-md">
-              <img
-                src={logo}
-                alt="Logo"
-                className="w-12 h-12 object-contain brightness-0 invert"
-              />
+              <img src={logo} alt="Logo" className="w-12 h-12 object-contain brightness-0 invert" />
             </div>
-            <h2 className="text-5xl font-bold mb-4 tracking-tight font-serif text-[#D4AF37]">
-              AdvoCare
-            </h2>
+            <h2 className="text-5xl font-bold mb-4 tracking-tight font-serif text-[#D4AF37]">AdvoCare</h2>
             <p className="text-gray-300 text-lg font-light leading-relaxed max-w-md border-l-4 border-[#D4AF37] pl-4">
-              "Justice delayed is justice denied." <br /> Connect with top
-              verified legal experts instantly.
+              "Justice delayed is justice denied." <br /> Connect with top verified legal experts instantly.
             </p>
           </div>
         </div>
@@ -167,33 +140,24 @@ export default function Login() {
         <div className="w-full h-full flex flex-col justify-center p-10 md:p-16 bg-white dark:bg-[#1a1a1a] relative border-l border-gray-100 dark:border-[#333] transition-colors">
           <div className="max-w-md mx-auto w-full">
             <div className="mb-10 text-center md:text-left">
-              <h2 className="text-4xl font-bold text-[#D4AF37] mb-2 font-serif">
-                Member Login
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 font-sans transition-colors">
-                Access your legal dashboard securely.
-              </p>
+              <h2 className="text-4xl font-bold text-[#D4AF37] mb-2 font-serif">Member Login</h2>
+              <p className="text-gray-500 dark:text-gray-400 font-sans transition-colors">Access your legal dashboard securely.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+
               {/* ROLE SELECTOR */}
               <div>
-                <label className="block text-xs uppercase tracking-wider text-[#D4AF37] mb-3 font-semibold">
-                  I am a
-                </label>
+                <label className="block text-xs uppercase tracking-wider text-[#D4AF37] mb-3 font-semibold">I am a</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {["CITIZEN", "LAWYER", "NGO", "ADMIN"].map((r) => (
+                  {['CITIZEN', 'LAWYER', 'NGO', 'ADMIN'].map((r) => (
                     <button
                       key={r}
                       type="button"
-                      onClick={() =>
-                        handleChange({ target: { name: "role", value: r } })
-                      }
-                      className={`py-2.5 px-4 text-xs font-bold uppercase tracking-widest transition-all border ${
-                        form.role === r
-                          ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-                          : "bg-gray-50 dark:bg-[#252525] text-gray-400 dark:text-gray-500 border-gray-200 dark:border-[#333] hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                      }`}
+                      onClick={() => handleChange({ target: { name: 'role', value: r } })}
+                      className={`py-2.5 px-4 text-xs font-bold uppercase tracking-widest transition-all border ${form.role === r
+                        ? 'bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]'
+                        : 'bg-gray-50 dark:bg-[#252525] text-gray-400 dark:text-gray-500 border-gray-200 dark:border-[#333] hover:border-[#D4AF37] hover:text-[#D4AF37]'}`}
                     >
                       {r}
                     </button>
@@ -203,9 +167,7 @@ export default function Login() {
 
               {/* EMAIL */}
               <div className="group">
-                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">
-                  Email Address
-                </label>
+                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">Email Address</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FiUser className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-[#D4AF37] transition-colors" />
@@ -216,22 +178,18 @@ export default function Login() {
                     value={form.username}
                     onChange={handleChange}
                     onBlur={() => handleBlur("username")}
-                    className={`block w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.username && errors.username ? "border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10" : "border-gray-200 dark:border-[#333]"} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
+                    className={`block w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.username && errors.username ? 'border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10' : 'border-gray-200 dark:border-[#333]'} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
                     placeholder="Enter your registered email"
                   />
                 </div>
                 {touched.username && errors.username && (
-                  <p className="text-red-500 text-xs mt-1 font-sans">
-                    {errors.username}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1 font-sans">{errors.username}</p>
                 )}
               </div>
 
               {/* PASSWORD */}
               <div className="group">
-                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">
-                  Password
-                </label>
+                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FiLock className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-[#D4AF37] transition-colors" />
@@ -242,7 +200,7 @@ export default function Login() {
                     value={form.password}
                     onChange={handleChange}
                     onBlur={() => handleBlur("password")}
-                    className={`block w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.password && errors.password ? "border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10" : "border-gray-200 dark:border-[#333]"} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
+                    className={`block w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.password && errors.password ? 'border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10' : 'border-gray-200 dark:border-[#333]'} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
                     placeholder="••••••••"
                   />
                   <button
@@ -250,17 +208,11 @@ export default function Login() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-[#D4AF37] focus:outline-none cursor-pointer"
                   >
-                    {showPassword ? (
-                      <FiEyeOff className="h-5 w-5" />
-                    ) : (
-                      <FiEye className="h-5 w-5" />
-                    )}
+                    {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                   </button>
                 </div>
                 {touched.password && errors.password && (
-                  <p className="text-red-500 text-xs mt-1 font-sans">
-                    {errors.password}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1 font-sans">{errors.password}</p>
                 )}
                 <div className="flex justify-end mt-2">
                   <Link
@@ -274,24 +226,8 @@ export default function Login() {
 
               {error && (
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 flex items-start gap-3 transition-colors">
-                  <span className="text-red-500 mt-0.5">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </span>
-                  <div className="text-sm text-red-600 dark:text-red-400 font-sans transition-colors">
-                    {error}
-                  </div>
+                  <span className="text-red-500 mt-0.5"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                  <div className="text-sm text-red-600 dark:text-red-400 font-sans transition-colors">{error}</div>
                 </div>
               )}
 

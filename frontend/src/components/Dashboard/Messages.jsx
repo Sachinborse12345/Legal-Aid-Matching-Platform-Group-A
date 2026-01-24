@@ -6,7 +6,7 @@ import axiosClient from "../../api/axiosClient";
 import {
     FiSend, FiPaperclip, FiImage, FiFileText, FiMessageSquare, FiSearch,
     FiMoreVertical, FiArrowLeft, FiEdit2, FiCheck, FiX, FiTrash2, FiCornerDownLeft,
-    FiSmile, FiMic, FiPhone, FiVideo, FiInfo, FiMail, FiMapPin, FiAward, FiWifi, FiWifiOff
+    FiSmile, FiInfo, FiMail, FiMapPin, FiAward, FiWifi, FiWifiOff
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -47,9 +47,32 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
         }
     }, [isOnline, currentUserId]);
 
+    // Define scrollToBottom first
+    const scrollToBottom = React.useCallback(() => {
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+    }, []);
+
+    // Define selectSession using useCallback
+    const selectSession = React.useCallback(async (session) => {
+        setCurrentSession(session);
+        setReplyingTo(null);
+        setEditingMessage(null);
+        setMessageText("");
+        try {
+            const res = await getMessages(session.id);
+            setMessages(res.data);
+            scrollToBottom();
+            await markMessagesRead(session.id);
+        } catch (err) {
+            console.error("Error fetching messages:", err);
+        }
+    }, [scrollToBottom]);
+
     // Fetch sessions on load
     useEffect(() => {
-        const fetchSessions = async () => {
+        const fetchSessions = async (retryCount = 0) => {
             try {
                 const res = await getMySessions();
                 // Sort by last message time (most recent first)
@@ -60,30 +83,72 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                 });
                 setSessions(sorted);
 
-                if (selectedRecipient && selectedRecipient.sessionId) {
-                    const session = sorted.find(s => s.id === selectedRecipient.sessionId);
-                    if (session) selectSession(session);
-                } else if (selectedRecipient && selectedRecipient.id) {
-                    let session;
-                    if (currentRole === 'CITIZEN') {
-                        session = sorted.find(s => s.providerId === selectedRecipient.id && s.providerRole === selectedRecipient.type.toUpperCase());
-                    } else {
-                        session = sorted.find(s => s.citizenId === selectedRecipient.id);
+                // Handle selectedRecipient after sessions are loaded
+                if (selectedRecipient) {
+                    let session = null;
+                    
+                    // First, try to find by sessionId if provided
+                    if (selectedRecipient.sessionId) {
+                        session = sorted.find(s => String(s.id) === String(selectedRecipient.sessionId));
                     }
-                    if (session) selectSession(session);
+                    
+                    // If not found by sessionId, try to find by provider/citizen ID
+                    if (!session && selectedRecipient.id) {
+                        if (currentRole === 'CITIZEN') {
+                            const recipientType = selectedRecipient.type?.toUpperCase() || '';
+                            session = sorted.find(s => 
+                                String(s.providerId) === String(selectedRecipient.id) && 
+                                s.providerRole?.toUpperCase() === recipientType
+                            );
+                        } else {
+                            session = sorted.find(s => String(s.citizenId) === String(selectedRecipient.id));
+                        }
+                    }
+                    
+                    // If session found, select it
+                    if (session) {
+                        selectSession(session);
+                        // Clear selectedRecipient after successful selection to avoid re-triggering
+                        if (setSelectedRecipient) {
+                            setSelectedRecipient(null);
+                        }
+                    } else if (selectedRecipient.sessionId && retryCount < 3) {
+                        // If sessionId is provided but not found, retry after a short delay
+                        // This handles the case where the session was just created
+                        setTimeout(() => {
+                            fetchSessions(retryCount + 1);
+                        }, 500);
+                    } else if (selectedRecipient.sessionId) {
+                        // If we have a sessionId but can't find it after retries, create a temporary session object
+                        const tempSession = {
+                            id: selectedRecipient.sessionId,
+                            providerId: currentRole === 'CITIZEN' ? selectedRecipient.id : null,
+                            providerRole: currentRole === 'CITIZEN' ? (selectedRecipient.type?.toUpperCase() || 'LAWYER') : null,
+                            citizenId: currentRole !== 'CITIZEN' ? selectedRecipient.id : null,
+                            caseId: null,
+                            lastMessageTime: null,
+                            unreadCount: 0
+                        };
+                        selectSession(tempSession);
+                        if (setSelectedRecipient) {
+                            setSelectedRecipient(null);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching sessions:", err);
             }
         };
         fetchSessions();
-    }, [selectedRecipient, currentRole]);
+    }, [selectedRecipient, currentRole, selectSession, setSelectedRecipient]);
 
     // Connect to WebSocket when session is selected
     useEffect(() => {
         if (!currentSession) return;
 
-        const socket = new SockJS("http://localhost:8080/ws-chat");
+        // Get base URL from axiosClient or use default
+        const baseUrl = axiosClient.defaults.baseURL?.replace('/api', '') || 'http://localhost:8080';
+        const socket = new SockJS(`${baseUrl}/ws-chat`);
         const client = new Client({
             webSocketFactory: () => socket,
             onConnect: () => {
@@ -220,26 +285,6 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
         });
     }, [isOnline, stompClient, sessions, currentUserId]);
 
-    const selectSession = async (session) => {
-        setCurrentSession(session);
-        setReplyingTo(null);
-        setEditingMessage(null);
-        setMessageText("");
-        try {
-            const res = await getMessages(session.id);
-            setMessages(res.data);
-            scrollToBottom();
-            await markMessagesRead(session.id);
-        } catch (err) {
-            console.error("Error fetching messages:", err);
-        }
-    };
-
-    const scrollToBottom = () => {
-        setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-    };
 
     const handleTyping = () => {
         if (!stompClient || !currentSession) return;
@@ -458,53 +503,6 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
         return messages.find(m => m.id === replyToId);
     };
 
-    const handleVideoCall = async () => {
-        if (!currentSession) return;
-        const contactName = getSessionDisplayName(currentSession);
-
-        // For now, show info - can integrate with WebRTC/Zoom later
-        toast.info(`Initiating video consultation with ${contactName}...`, {
-            duration: 3000,
-        });
-
-        // TODO: Integrate with video calling service (WebRTC, Zoom, Jitsi, etc.)
-        // Example: window.open(`https://meet.jit.si/${currentSession.id}`, '_blank');
-    };
-
-    const handlePhoneCall = async () => {
-        if (!currentSession) return;
-
-        try {
-            let phoneNumber = null;
-
-            if (currentRole === 'CITIZEN') {
-                // Fetch provider (lawyer/NGO) contact
-                if (currentSession.providerRole === 'LAWYER') {
-                    const response = await axiosClient.get(`/lawyers/${currentSession.providerId}`);
-                    phoneNumber = response.data?.mobileNum || response.data?.mobile;
-                } else if (currentSession.providerRole === 'NGO') {
-                    const response = await axiosClient.get(`/ngos/${currentSession.providerId}`);
-                    phoneNumber = response.data?.contact;
-                }
-            } else {
-                // Fetch citizen contact
-                const response = await axiosClient.get(`/citizens/${currentSession.citizenId}`);
-                phoneNumber = response.data?.mobileNum || response.data?.mobile;
-            }
-
-            if (phoneNumber) {
-                // Clean phone number (remove spaces, dashes, etc.)
-                const cleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
-                window.location.href = `tel:${cleanPhone}`;
-                toast.success(`Calling ${getSessionDisplayName(currentSession)}...`);
-            } else {
-                toast.error("Phone number not available for this contact.");
-            }
-        } catch (error) {
-            console.error("Error fetching contact:", error);
-            toast.error("Unable to fetch contact information. Please try again.");
-        }
-    };
 
     const handleShowInfo = async () => {
         if (!currentSession) return;
@@ -741,31 +739,7 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                                                 <p className="text-sm text-[#D4AF37] font-medium">{getSessionSubtitle(currentSession)}</p>
                                             </div>
                                         </div>
-                                        <div className="pt-4 border-t border-gray-200 dark:border-[#333] space-y-3">
-                                            <button
-                                                onClick={handlePhoneCall}
-                                                className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#111] hover:bg-gray-100 dark:hover:bg-[#222] rounded-xl transition-colors"
-                                            >
-                                                <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center">
-                                                    <FiPhone className="text-[#D4AF37]" size={20} />
-                                                </div>
-                                                <div className="text-left flex-1">
-                                                    <div className="font-semibold text-gray-900 dark:text-white text-sm">Phone Call</div>
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400">Initiate voice call</div>
-                                                </div>
-                                            </button>
-                                            <button
-                                                onClick={handleVideoCall}
-                                                className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#111] hover:bg-gray-100 dark:hover:bg-[#222] rounded-xl transition-colors"
-                                            >
-                                                <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center">
-                                                    <FiVideo className="text-[#D4AF37]" size={20} />
-                                                </div>
-                                                <div className="text-left flex-1">
-                                                    <div className="font-semibold text-gray-900 dark:text-white text-sm">Video Call</div>
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400">Start video consultation</div>
-                                                </div>
-                                            </button>
+                                        <div className="pt-4 border-t border-gray-200 dark:border-[#333]">
                                             <div className="pt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
                                                 Session ID: {currentSession.id}
                                             </div>
@@ -814,20 +788,6 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                                     title={isOnline ? "Go Offline" : "Go Online"}
                                 >
                                     {isOnline ? <FiWifi size={20} /> : <FiWifiOff size={20} />}
-                                </button>
-                                <button
-                                    onClick={handleVideoCall}
-                                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-[#D4AF37] rounded-full transition-colors"
-                                    title="Video Call"
-                                >
-                                    <FiVideo size={20} />
-                                </button>
-                                <button
-                                    onClick={handlePhoneCall}
-                                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-[#D4AF37] rounded-full transition-colors"
-                                    title="Phone Call"
-                                >
-                                    <FiPhone size={20} />
                                 </button>
                                 <button
                                     onClick={handleShowInfo}
@@ -1089,22 +1049,18 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
                                     />
                                 </div>
 
-                                {messageText.trim() || editingMessage ? (
-                                    <button
-                                        onClick={handleSendMessage}
-                                        className="p-3 bg-[#D4AF37] hover:bg-[#c5a059] text-black rounded-full shadow-lg transition-colors flex-shrink-0"
-                                    >
-                                        <FiSend size={20} />
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => toast.info("Voice message feature coming soon")}
-                                        className="p-3 bg-[#D4AF37] hover:bg-[#c5a059] text-black rounded-full shadow-lg transition-colors flex-shrink-0"
-                                        title="Voice Message"
-                                    >
-                                        <FiMic size={20} />
-                                    </button>
-                                )}
+                                <button
+                                    onClick={handleSendMessage}
+                                    disabled={!messageText.trim() && !editingMessage}
+                                    className={`p-3 rounded-full shadow-lg transition-colors flex-shrink-0 ${
+                                        messageText.trim() || editingMessage
+                                            ? 'bg-[#D4AF37] hover:bg-[#c5a059] text-black cursor-pointer'
+                                            : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                                    }`}
+                                    title="Send Message"
+                                >
+                                    <FiSend size={20} />
+                                </button>
                             </div>
                         </div>
                     </>

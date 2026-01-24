@@ -42,6 +42,15 @@ public class Appointment {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "case_id")
+    private Long caseId;
+
+    @Column(name = "case_title")
+    private String caseTitle;
+
+    @Column(name = "case_summary", columnDefinition = "TEXT")
+    private String caseSummary;
+
     @Column(name = "provider_name")
     private String providerName;
 
@@ -170,5 +179,29 @@ public class Appointment {
 
     public void setRequesterName(String requesterName) {
         this.requesterName = requesterName;
+    }
+
+    public Long getCaseId() {
+        return caseId;
+    }
+
+    public void setCaseId(Long caseId) {
+        this.caseId = caseId;
+    }
+
+    public String getCaseTitle() {
+        return caseTitle;
+    }
+
+    public void setCaseTitle(String caseTitle) {
+        this.caseTitle = caseTitle;
+    }
+
+    public String getCaseSummary() {
+        return caseSummary;
+    }
+
+    public void setCaseSummary(String caseSummary) {
+        this.caseSummary = caseSummary;
     }
 }

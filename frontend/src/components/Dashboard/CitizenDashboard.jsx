@@ -130,11 +130,10 @@ export default function CitizenDashboard() {
       const { page, caseId } = e.detail || {};
       if (page) {
         if (page === 'matches') {
-          // Find the specific case or the most recent one
           const targetCaseId = caseId || (casesRef.current && casesRef.current.length > 0 ? casesRef.current[0].id : null);
-
           if (targetCaseId) {
-            setSelectedCaseForMatches(targetCaseId);
+            const caseObj = casesRef.current?.find((c) => c.id === targetCaseId) || { id: targetCaseId };
+            setSelectedCaseForMatches(caseObj);
             setActivePage("matches");
           } else {
             setActivePage("cases");
@@ -209,6 +208,14 @@ export default function CitizenDashboard() {
     }
   }, [isAuthenticated, profile.role, activePage]);
 
+  useEffect(() => {
+    const handler = () => {
+      if (profile.role === "CITIZEN") fetchAppointments();
+    };
+    window.addEventListener("appointmentUpdated", handler);
+    return () => window.removeEventListener("appointmentUpdated", handler);
+  }, [profile.role]);
+
   const handleCreateMessage = (recipientProfile) => {
     setActivePage("messages");
     setSelectedRecipient({
@@ -218,14 +225,22 @@ export default function CitizenDashboard() {
     });
   };
 
-  const handleBookAppointment = (prof) => {
+  const handleBookAppointment = (prof, caseDetail = null) => {
     setActivePage("appointments");
     setProfile(prev => ({
       ...prev,
       initialAppointmentData: {
         providerId: prof.originalId || prof.id,
         providerRole: (prof.type || prof.role || "LAWYER").toUpperCase(),
-        providerName: prof.name || prof.fullName || prof.ngoName || prof.shortName || "Provider"
+        providerName: prof.name || prof.fullName || prof.ngoName || prof.shortName || "Provider",
+        caseId: caseDetail?.id || prof.caseId || null,
+        caseTitle: caseDetail?.caseTitle || prof.caseTitle || null,
+        caseSummary: caseDetail ? [
+          caseDetail.caseType && `Type: ${caseDetail.caseType}`,
+          caseDetail.urgency && `Urgency: ${caseDetail.urgency}`,
+          caseDetail.incidentPlace && `Location: ${caseDetail.incidentPlace}`,
+          caseDetail.specialization && `Specialization: ${caseDetail.specialization}`
+        ].filter(Boolean).join(" • ") : prof.caseSummary || null
       }
     }));
   };
@@ -319,16 +334,26 @@ export default function CitizenDashboard() {
 
             {activePage === "cases" && (
               <CitizenMyCases
-                onViewMatches={(caseId) => {
-                  setSelectedCaseForMatches(caseId);
+                onViewMatches={(caseObj) => {
+                  setSelectedCaseForMatches(caseObj);
                   setActivePage("matches");
+                }}
+                onMessageProvider={(provider) => {
+                  setSelectedRecipient({
+                    type: provider.type || "lawyer",
+                    id: provider.id,
+                    name: provider.name,
+                    sessionId: provider.sessionId
+                  });
+                  setActivePage("messages");
                 }}
               />
             )}
 
             {activePage === "matches" && selectedCaseForMatches && (
               <CitizenMatches
-                caseId={selectedCaseForMatches}
+                caseId={selectedCaseForMatches.id}
+                caseDetail={selectedCaseForMatches}
                 setActivePage={setActivePage}
                 setSelectedRecipient={setSelectedRecipient}
                 onBookAppointment={handleBookAppointment}

@@ -27,7 +27,10 @@ public class CaseMatch {
     private Double matchScore; // Compatibility score
 
     @Column(name = "status")
-    private String status = "SUGGESTED"; // SUGGESTED, CONTACTED, IGNORED
+    private String status = "SUGGESTED"; // SUGGESTED, CONTACTED, ACCEPTED, CANCELLED
+
+    @Column(name = "appointment_id")
+    private Long appointmentId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -113,5 +116,13 @@ public class CaseMatch {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getAppointmentId() {
+        return appointmentId;
+    }
+
+    public void setAppointmentId(Long appointmentId) {
+        this.appointmentId = appointmentId;
     }
 }

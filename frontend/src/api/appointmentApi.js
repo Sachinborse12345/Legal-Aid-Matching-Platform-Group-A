@@ -2,7 +2,7 @@ import axiosClient from "./axiosClient";
 
 // Schedule an appointment
 export const scheduleAppointment = async (appointmentData) => {
-    // appointmentData: { providerId, providerRole, startTime, endTime, type, description }
+    // appointmentData: { providerId, providerRole, startTime, endTime, type, description, caseId?, caseTitle?, caseSummary? }
     return axiosClient.post("/appointments", appointmentData);
 };
 

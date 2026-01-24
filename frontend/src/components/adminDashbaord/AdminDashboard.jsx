@@ -149,8 +149,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-6">
-            <NotificationBell />
-            <div className="hidden sm:block text-right border-l border-gray-200 dark:border-[#333] pl-6 transition-colors">
+            <div className="hidden sm:block text-right transition-colors">
               <div className="font-bold text-sm text-gray-900 dark:text-white transition-colors">{profile.shortName || profile.fullName || "Admin"}</div>
               <div className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-widest">Administrator</div>
             </div>

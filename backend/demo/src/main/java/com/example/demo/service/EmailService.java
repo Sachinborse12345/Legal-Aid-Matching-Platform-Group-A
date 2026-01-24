@@ -534,4 +534,111 @@ public class EmailService {
             e.printStackTrace();
         }
     }
+
+    public void sendCaseCancellationEmail(String providerEmail, String providerName, String providerRole,
+            String citizenName, String caseNumber, String caseTitle, String reason) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom("advocare503@gmail.com");
+            helper.setTo(providerEmail);
+            helper.setSubject("Case Assignment Cancelled - AdvoCare");
+
+            // Format role name for display
+            String roleDisplay = providerRole;
+            String roleIcon = "⚖️";
+            if (providerRole.equalsIgnoreCase("LAWYER")) {
+                roleDisplay = "Lawyer";
+                roleIcon = "⚖️";
+            } else if (providerRole.equalsIgnoreCase("NGO")) {
+                roleDisplay = "NGO";
+                roleIcon = "🤝";
+            }
+
+            String reasonHtml = "";
+            if (reason != null && !reason.trim().isEmpty()) {
+                reasonHtml = "<div class='reason-box'>" +
+                        "<h3 style='color: #EF4444; font-size: 18px; margin-bottom: 10px;'>Reason for Cancellation:</h3>" +
+                        "<p style='color: #555555; font-size: 15px; line-height: 1.7; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #EF4444; border-radius: 4px;'>" +
+                        reason + "</p>" +
+                        "</div>";
+            }
+
+            String htmlContent = "<!DOCTYPE html>" +
+                    "<html>" +
+                    "<head>" +
+                    "<meta charset='UTF-8'>" +
+                    "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+                    "<style>" +
+                    "  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f7fa; }" +
+                    "  .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }" +
+                    "  .header { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%); padding: 40px 20px; text-align: center; }" +
+                    "  .header h1 { color: #ffffff; margin: 0; font-size: 28px; font-weight: 600; }" +
+                    "  .header .subtitle { color: #ffffff; margin-top: 10px; font-size: 14px; opacity: 0.95; }" +
+                    "  .content { padding: 40px 30px; }" +
+                    "  .greeting { color: #333333; font-size: 16px; line-height: 1.6; margin-bottom: 25px; }" +
+                    "  .greeting strong { color: #EF4444; }" +
+                    "  .case-card { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; padding: 25px; margin: 25px 0; border: 1px solid #dee2e6; }" +
+                    "  .case-card h2 { color: #EF4444; font-size: 20px; margin: 0 0 20px 0; text-align: center; font-weight: 600; }" +
+                    "  .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #dee2e6; align-items: flex-start; }" +
+                    "  .detail-row:last-child { border-bottom: none; }" +
+                    "  .detail-label { color: #6c757d; font-weight: 600; font-size: 14px; min-width: 100px; }" +
+                    "  .detail-value { color: #333333; font-weight: 500; font-size: 14px; text-align: right; flex: 1; }" +
+                    "  .reason-box { margin: 25px 0; }" +
+                    "  .footer { background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e9ecef; }" +
+                    "  .footer p { color: #6c757d; font-size: 14px; margin: 8px 0; line-height: 1.6; }" +
+                    "  .brand-name { color: #EF4444; font-weight: 700; }" +
+                    "</style>" +
+                    "</head>" +
+                    "<body>" +
+                    "  <div class='email-container'>" +
+                    "    <div class='header'>" +
+                    "      <h1>❌ Case Assignment Cancelled</h1>" +
+                    "      <div class='subtitle'>Your assignment has been cancelled</div>" +
+                    "    </div>" +
+                    "    <div class='content'>" +
+                    "      <div class='greeting'>" +
+                    "        <p>Dear <strong>" + providerName + "</strong>,</p>" +
+                    "        <p>We regret to inform you that your case assignment has been cancelled through <span class='brand-name'>AdvoCare</span>.</p>" +
+                    "      </div>" +
+                    "      <div class='case-card'>" +
+                    "        <h2>📋 Case Details</h2>" +
+                    "        <div class='detail-row'>" +
+                    "          <span class='detail-label'>Case Number:</span>" +
+                    "          <span class='detail-value'>" + caseNumber + "</span>" +
+                    "        </div>" +
+                    "        <div class='detail-row'>" +
+                    "          <span class='detail-label'>Case Title:</span>" +
+                    "          <span class='detail-value'>" + caseTitle + "</span>" +
+                    "        </div>" +
+                    "        <div class='detail-row'>" +
+                    "          <span class='detail-label'>Client:</span>" +
+                    "          <span class='detail-value'>" + citizenName + "</span>" +
+                    "        </div>" +
+                    "      </div>" +
+                    reasonHtml +
+                    "      <div style='text-align: center; margin: 30px 0; color: #555555; font-size: 15px; line-height: 1.7;'>" +
+                    "        <p>If you have any questions about this cancellation, please contact our support team.</p>" +
+                    "        <p>Thank you for being a part of <span class='brand-name'>AdvoCare</span>!</p>" +
+                    "      </div>" +
+                    "    </div>" +
+                    "    <div class='footer'>" +
+                    "      <p><strong>Best regards,</strong></p>" +
+                    "      <p>The AdvoCare Team</p>" +
+                    "      <p style='margin-top: 20px; font-size: 11px; color: #adb5bd;'>This is an automated email. Please do not reply to this message.</p>" +
+                    "    </div>" +
+                    "  </div>" +
+                    "</body>" +
+                    "</html>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            System.out.println("Case cancellation email sent successfully to: " + providerEmail);
+        } catch (MessagingException e) {
+            System.err.println("Error sending case cancellation email: " + e.getMessage());
+            // Don't throw exception - cancellation should succeed even if email fails
+            e.printStackTrace();
+        }
+    }
 }

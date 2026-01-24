@@ -4,14 +4,7 @@ import axios from "axios";
 import { createSession } from "../../api/chatApi";
 import { toast } from "sonner";
 
-function DirectoryCard({
-  item,
-  setActivePage,
-  setSelectedRecipient,
-  onViewProfile,
-  onBookAppointment,
-  appointments = [],
-}) {
+function DirectoryCard({ item, setActivePage, setSelectedRecipient, onViewProfile, onBookAppointment, appointments = [] }) {
   // item is a DirectoryEntry
   const isLawyer = item.type === "LAWYER";
   const typeLabel = isLawyer ? "LAWYER" : "NGO";
@@ -27,10 +20,9 @@ function DirectoryCard({
   const verified = item.verified;
 
   // Check for existing appointment
-  const existingAppt = appointments.find(
-    (a) =>
-      a.providerId === (item.originalId || item.id) &&
-      a.providerRole === item.type,
+  const existingAppt = appointments.find(a =>
+    a.providerId === (item.originalId || item.id) &&
+    a.providerRole === item.type
   );
   const hasAppt = !!existingAppt;
   const apptStatus = existingAppt?.status;
@@ -39,10 +31,8 @@ function DirectoryCard({
     <div className="bg-white dark:bg-[#1a1a1a] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-[#333] hover:shadow-md transition-shadow flex flex-col justify-between h-full transition-colors">
       <div>
         <div className="flex justify-between items-start mb-3">
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${isLawyer ? "bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300" : "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300"}`}
-          >
-            {isLawyer ? "L" : "N"}
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${isLawyer ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'}`}>
+            {isLawyer ? 'L' : 'N'}
           </div>
           {verified && (
             <span className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] px-2 py-1 rounded-full font-medium border border-green-100 dark:border-green-800 transition-colors">
@@ -51,61 +41,22 @@ function DirectoryCard({
           )}
         </div>
 
-        <h3
-          className="font-semibold text-lg text-gray-900 dark:text-white mb-1 line-clamp-1 transition-colors"
-          title={name}
-        >
-          {name}
-        </h3>
+        <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1 line-clamp-1 transition-colors" title={name}>{name}</h3>
 
         <div className="flex items-center gap-2 mb-3">
-          <span
-            className={`text-xs px-2 py-0.5 rounded border transition-colors ${isLawyer ? "bg-gray-50 dark:bg-[#222] border-gray-200 dark:border-[#444] text-gray-600 dark:text-gray-300" : "bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300"}`}
-          >
+          <span className={`text-xs px-2 py-0.5 rounded border transition-colors ${isLawyer ? 'bg-gray-50 dark:bg-[#222] border-gray-200 dark:border-[#444] text-gray-600 dark:text-gray-300' : 'bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300'}`}>
             {typeLabel}
           </span>
         </div>
 
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 transition-colors">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             <span className="truncate">{specialization || "General"}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 transition-colors">
-            <svg
-              className="w-4 h-4 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span className="truncate">
-              {city}, {state}
-            </span>
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <span className="truncate">{city}, {state}</span>
           </div>
         </div>
       </div>
@@ -114,22 +65,23 @@ function DirectoryCard({
         <button
           onClick={async () => {
             try {
-              const res = await createSession(
-                null,
-                item.id,
-                isLawyer ? "LAWYER" : "NGO",
-              );
+              const res = await createSession(null, item.id, isLawyer ? "LAWYER" : "NGO");
               const session = res.data;
-              setSelectedRecipient({
-                type: isLawyer ? "lawyer" : "ngo",
-                id: item.id,
-                name: name,
-                sessionId: session.id,
-              });
-              setActivePage("messages");
+              if (session && session.id) {
+                setSelectedRecipient({
+                  type: isLawyer ? "lawyer" : "ngo",
+                  id: item.id,
+                  name: name,
+                  sessionId: session.id
+                });
+                setActivePage("messages");
+              } else {
+                toast.error("Failed to create chat session.");
+              }
             } catch (err) {
               console.error("Failed to start chat:", err);
-              toast.error("Failed to start conversation. Please try again.");
+              const errorMsg = err.response?.data?.message || err.message || "Failed to start conversation. Please try again.";
+              toast.error(errorMsg);
             }
           }}
           className="w-full bg-[#234f4a] hover:bg-[#1a3b37] dark:bg-[#234f4a] dark:hover:bg-[#1a3b37] text-white py-2 rounded-lg text-sm font-medium transition-colors"
@@ -144,21 +96,18 @@ function DirectoryCard({
         </button>
         <button
           onClick={() => onBookAppointment(item)}
-          disabled={
-            hasAppt && apptStatus !== "REJECTED" && apptStatus !== "CANCELLED"
-          }
-          className={`w-full py-2 rounded-lg text-sm font-bold shadow-sm transition-colors ${
-            hasAppt
-              ? apptStatus === "CONFIRMED" || apptStatus === "APPROVED"
-                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 cursor-default"
-                : apptStatus === "REJECTED" || apptStatus === "CANCELLED"
-                  ? "bg-[#FDB415] hover:bg-[#eaa512] text-[#234f4a] dark:text-[#234f4a]"
-                  : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 cursor-default"
-              : "bg-[#FDB415] hover:bg-[#eaa512] text-[#234f4a] dark:text-[#234f4a]"
-          }`}
+          disabled={hasAppt && apptStatus !== 'REJECTED' && apptStatus !== 'CANCELLED'}
+          className={`w-full py-2 rounded-lg text-sm font-bold shadow-sm transition-colors ${hasAppt
+            ? apptStatus === 'CONFIRMED' || apptStatus === 'APPROVED'
+              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 cursor-default"
+              : apptStatus === 'REJECTED' || apptStatus === 'CANCELLED'
+                ? "bg-[#FDB415] hover:bg-[#eaa512] text-[#234f4a] dark:text-[#234f4a]"
+                : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 cursor-default"
+            : "bg-[#FDB415] hover:bg-[#eaa512] text-[#234f4a] dark:text-[#234f4a]"
+            }`}
         >
           {hasAppt
-            ? apptStatus === "REJECTED" || apptStatus === "CANCELLED"
+            ? apptStatus === 'REJECTED' || apptStatus === 'CANCELLED'
               ? "Rebook Appointment"
               : `Appointment ${apptStatus}`
             : "Book Appointment"}
@@ -173,7 +122,7 @@ export default function CitizenFindLawyer({
   setSelectedRecipient,
   onViewProfile,
   onBookAppointment,
-  appointments,
+  appointments
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -228,16 +177,7 @@ export default function CitizenFindLawyer({
     } finally {
       setLoading(false);
     }
-  }, [
-    page,
-    size,
-    filterType,
-    searchTerm,
-    filterSpec,
-    filterNgoSpec,
-    filterLocation,
-    filterExperience,
-  ]);
+  }, [page, size, filterType, searchTerm, filterSpec, filterNgoSpec, filterLocation, filterExperience]);
 
   // Fetch when dependencies change.
   // Debounce search term to avoid too many calls? For now plain effect.
@@ -251,14 +191,7 @@ export default function CitizenFindLawyer({
   // Reset page and specialization when filters change
   useEffect(() => {
     setPage(0);
-  }, [
-    searchTerm,
-    filterType,
-    filterSpec,
-    filterNgoSpec,
-    filterLocation,
-    filterExperience,
-  ]);
+  }, [searchTerm, filterType, filterSpec, filterNgoSpec, filterLocation, filterExperience]);
 
   useEffect(() => {
     setFilterSpec("");
@@ -267,28 +200,15 @@ export default function CitizenFindLawyer({
 
   return (
     <div className="space-y-6">
+
       <div className="bg-white dark:bg-[#1a1a1a] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-[#333] transition-colors">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 transition-colors">
-          Find Lawyers & NGOs
-        </h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 transition-colors">Find Lawyers & NGOs</h2>
 
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search Bar */}
           <div className="flex-1 relative">
             <span className="absolute left-3 top-3 text-gray-400 dark:text-gray-500 transition-colors">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </span>
             <input
               type="text"
@@ -320,11 +240,7 @@ export default function CitizenFindLawyer({
                 value={filterSpec}
                 onChange={(e) => setFilterSpec(e.target.value)}
               >
-                <option value="">
-                  {filterType === "All"
-                    ? "Lawyer Specialization"
-                    : "Any Specialization"}
-                </option>
+                <option value="">{filterType === "All" ? "Lawyer Specialization" : "Any Specialization"}</option>
                 <option value="Criminal">Criminal Law</option>
                 <option value="Civil">Civil Law</option>
                 <option value="Family">Family Law</option>
@@ -342,17 +258,11 @@ export default function CitizenFindLawyer({
                 value={filterNgoSpec}
                 onChange={(e) => setFilterNgoSpec(e.target.value)}
               >
-                <option value="">
-                  {filterType === "All"
-                    ? "NGO Specialization"
-                    : "Any Specialization"}
-                </option>
+                <option value="">{filterType === "All" ? "NGO Specialization" : "Any Specialization"}</option>
                 <option value="Legal Aid">Legal Aid</option>
                 <option value="Women Rights">Women Rights</option>
                 <option value="Child Protection">Child Protection</option>
-                <option value="Senior Citizen Welfare">
-                  Senior Citizen Welfare
-                </option>
+                <option value="Senior Citizen Welfare">Senior Citizen Welfare</option>
                 <option value="Human Rights">Human Rights</option>
                 <option value="Education Support">Education Support</option>
                 <option value="Child Rights">Child Rights</option>
@@ -406,17 +316,9 @@ export default function CitizenFindLawyer({
 
             {items.length === 0 && (
               <div className="col-span-full text-center py-20 text-gray-500 dark:text-gray-400 transition-colors">
-                <p className="text-lg">
-                  No results found matching your criteria.
-                </p>
+                <p className="text-lg">No results found matching your criteria.</p>
                 <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setFilterType("All");
-                    setFilterSpec("");
-                    setFilterLocation("");
-                    setFilterExperience("");
-                  }}
+                  onClick={() => { setSearchTerm(''); setFilterType('All'); setFilterSpec(''); setFilterLocation(''); setFilterExperience(''); }}
                   className="mt-2 text-[#234f4a] dark:text-[#4a9b8e] underline hover:text-[#1a3b37] dark:hover:text-[#3a7d72] transition-colors"
                 >
                   Clear all filters
@@ -432,7 +334,7 @@ export default function CitizenFindLawyer({
         <div className="flex justify-center items-center gap-4 mt-8 pb-8">
           <button
             disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => setPage(p => Math.max(0, p - 1))}
             className="px-4 py-2 border border-gray-200 dark:border-[#444] rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-[#222] flex items-center gap-2 transition-colors"
           >
             ← Previous
@@ -444,7 +346,7 @@ export default function CitizenFindLawyer({
 
           <button
             disabled={page >= totalPages - 1}
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             className="px-4 py-2 border border-gray-200 dark:border-[#444] rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-[#222] flex items-center gap-2 transition-colors"
           >
             Next →

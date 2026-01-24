@@ -256,6 +256,11 @@ export default function CaseFilingForm() {
         toast.warn("Some files failed to upload: " + result.payload.uploadErrors.join(", "));
       }
       toast.success("Case submitted successfully!");
+      // Dispatch event to trigger cases refetch and navigate to My Cases
+      window.dispatchEvent(new CustomEvent('caseSubmitted'));
+      window.dispatchEvent(new CustomEvent('navigateDashboard', { detail: { page: 'cases' } }));
+    } else if (submitCaseData.rejected.match(result)) {
+      toast.error(result.payload || "Failed to submit case. Please try again.");
     }
   };
 

@@ -14,6 +14,12 @@ export default function NotificationBell() {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        const handler = () => fetchData();
+        window.addEventListener("appointmentUpdated", handler);
+        return () => window.removeEventListener("appointmentUpdated", handler);
+    }, []);
+
     const fetchData = async () => {
         try {
             const [notifsRes, countRes] = await Promise.all([

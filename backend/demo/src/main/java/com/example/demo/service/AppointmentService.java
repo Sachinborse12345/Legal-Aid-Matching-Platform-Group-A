@@ -64,7 +64,12 @@ public class AppointmentService {
                     appointment.getStartTime());
             
             if (!unavailabilityPeriods.isEmpty()) {
-                throw new IllegalArgumentException("The lawyer is not available during this time period. Please select another time slot.");
+                com.example.demo.entity.LawyerUnavailability u = unavailabilityPeriods.get(0);
+                String reason = (u.getReason() != null && !u.getReason().isBlank()) ? u.getReason().trim() : null;
+                String msg = reason != null
+                    ? "The lawyer is not available during this time: " + reason + ". Please select another slot."
+                    : "The lawyer is not available during this time period. Please select another time slot.";
+                throw new IllegalArgumentException(msg);
             }
         }
 
@@ -368,8 +373,10 @@ public class AppointmentService {
                     .anyMatch(appt -> (appt.getStartTime().isBefore(slotEnd) && appt.getEndTime().isAfter(slotStart)));
 
             // Check if slot is in an unavailability period
-            boolean isUnavailable = unavailabilityPeriods.stream()
-                    .anyMatch(unav -> (unav.getStartTime().isBefore(slotEnd) && unav.getEndTime().isAfter(slotStart)));
+            java.util.Optional<com.example.demo.entity.LawyerUnavailability> unavMatch = unavailabilityPeriods.stream()
+                    .filter(unav -> (unav.getStartTime().isBefore(slotEnd) && unav.getEndTime().isAfter(slotStart)))
+                    .findFirst();
+            boolean isUnavailable = unavMatch.isPresent();
 
             Optional<Appointment> conflictAppt = requesterAppts.stream()
                     .filter(appt -> (appt.getStartTime().isBefore(slotEnd) && appt.getEndTime().isAfter(slotStart)))
@@ -381,6 +388,10 @@ public class AppointmentService {
 
             if (isUnavailable) {
                 slot.put("status", "UNAVAILABLE");
+                String reason = unavMatch.get().getReason();
+                if (reason != null && !reason.isBlank()) {
+                    slot.put("unavailabilityReason", reason.trim());
+                }
             } else if (isProviderBooked) {
                 slot.put("status", "BOOKED");
             } else if (conflictAppt.isPresent()) {

@@ -30,16 +30,21 @@ function NgoCard({ ngo, setActivePage, setSelectedRecipient }) {
             try {
               const res = await createSession(null, ngo.id, "NGO");
               const session = res.data;
-              setSelectedRecipient({
-                type: "ngo",
-                id: ngo.id,
-                name: ngo.ngoName,
-                sessionId: session.id
-              });
-              setActivePage("messages");
+              if (session && session.id) {
+                setSelectedRecipient({
+                  type: "ngo",
+                  id: ngo.id,
+                  name: ngo.ngoName,
+                  sessionId: session.id
+                });
+                setActivePage("messages");
+              } else {
+                toast.error("Failed to create chat session.");
+              }
             } catch (err) {
               console.error("Failed to start chat:", err);
-              toast.error("Failed to start conversation.");
+              const errorMsg = err.response?.data?.message || err.message || "Failed to start conversation.";
+              toast.error(errorMsg);
             }
           }}
           className="bg-teal-700 dark:bg-teal-600 hover:bg-teal-800 dark:hover:bg-teal-700 text-white px-3 py-1 rounded mt-2 transition-colors"

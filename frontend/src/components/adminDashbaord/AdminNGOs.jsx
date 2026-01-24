@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  FiSearch,
-  FiUsers,
-  FiMapPin,
-  FiFileText,
-  FiX,
-  FiShield,
-  FiChevronLeft,
-  FiChevronRight,
-  FiGlobe,
-} from "react-icons/fi";
+import { FiSearch, FiUsers, FiMapPin, FiFileText, FiX, FiShield, FiChevronLeft, FiChevronRight, FiGlobe } from "react-icons/fi";
 import axios from "axios";
 
 export default function AdminNGOs() {
@@ -27,12 +17,9 @@ export default function AdminNGOs() {
 
   const fetchNGOs = async () => {
     try {
-      const response = await axios.get(
-        "https://advocare-backend-gkg0.onrender.com/api/ngos",
-        {
-          params: { page, size: pageSize },
-        },
-      );
+      const response = await axios.get("http://localhost:8080/api/ngos", {
+        params: { page, size: pageSize }
+      });
       if (response.data.content) {
         setNgos(response.data.content);
         setTotalPages(response.data.totalPages);
@@ -48,14 +35,8 @@ export default function AdminNGOs() {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(
-        `https://advocare-backend-gkg0.onrender.com/api/ngos/${id}/approve`,
-      );
-      setNgos(
-        ngos.map((n) =>
-          n.id === id ? { ...n, isApproved: true, adminStatus: "APPROVED" } : n,
-        ),
-      );
+      await axios.put(`http://localhost:8080/api/ngos/${id}/approve`);
+      setNgos(ngos.map(n => n.id === id ? { ...n, isApproved: true, adminStatus: "APPROVED" } : n));
     } catch (error) {
       console.error("Approval failed:", error);
     }
@@ -63,22 +44,11 @@ export default function AdminNGOs() {
 
   const handleReject = async (id) => {
     try {
-      if (
-        !window.confirm("Are you sure you want to reject this NGO application?")
-      )
-        return;
-      await axios.put(
-        `https://advocare-backend-gkg0.onrender.com/api/ngos/${id}/reject`,
-      );
+      if (!window.confirm("Are you sure you want to reject this NGO application?")) return;
+      await axios.put(`http://localhost:8080/api/ngos/${id}/reject`);
       // Update state
       alert("NGO application rejected.");
-      setNgos(
-        ngos.map((n) =>
-          n.id === id
-            ? { ...n, isApproved: false, adminStatus: "REJECTED" }
-            : n,
-        ),
-      );
+      setNgos(ngos.map(n => n.id === id ? { ...n, isApproved: false, adminStatus: "REJECTED" } : n));
     } catch (error) {
       console.error("Rejection failed:", error);
       alert("Failed to reject NGO.");
@@ -97,12 +67,8 @@ export default function AdminNGOs() {
       <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl shadow-2xl p-8 relative overflow-hidden transition-colors">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 relative z-10">
           <div>
-            <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">
-              Organization Governance
-            </span>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">
-              NGO Registry
-            </h2>
+            <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">Organization Governance</span>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">NGO Registry</h2>
           </div>
           <div className="relative group w-full md:w-96">
             <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#D4AF37]/50 group-focus-within:text-[#D4AF37] transition-colors" />
@@ -119,16 +85,12 @@ export default function AdminNGOs() {
         {loading ? (
           <div className="py-20 text-center flex flex-col items-center">
             <div className="w-10 h-10 border-4 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin mb-4"></div>
-            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">
-              Retrieving Records...
-            </p>
+            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">Retrieving Records...</p>
           </div>
         ) : filteredNGOs.length === 0 ? (
           <div className="py-20 text-center bg-gray-50 dark:bg-[#111] rounded-2xl border border-dashed border-gray-200 dark:border-[#333] transition-colors">
             <FiUsers className="w-12 h-12 text-gray-300 dark:text-gray-800 mx-auto mb-4 opacity-30 transition-colors" />
-            <p className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest text-[10px] transition-colors">
-              No organizations found in the social vault
-            </p>
+            <p className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest text-[10px] transition-colors">No organizations found in the social vault</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -142,12 +104,8 @@ export default function AdminNGOs() {
                     {ngo.ngoName?.charAt(0)}
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-lg mb-1 truncate group-hover:text-[#D4AF37] transition-colors">
-                      {ngo.ngoName}
-                    </h3>
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest truncate transition-colors">
-                      {ngo.email}
-                    </p>
+                    <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-lg mb-1 truncate group-hover:text-[#D4AF37] transition-colors">{ngo.ngoName}</h3>
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest truncate transition-colors">{ngo.email}</p>
                   </div>
                 </div>
 
@@ -218,23 +176,19 @@ export default function AdminNGOs() {
           <div className="flex justify-center items-center gap-8 mt-12 pt-8 border-t border-gray-100 dark:border-[#222] transition-colors">
             <button
               disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              onClick={() => setPage(p => Math.max(0, p - 1))}
               className="p-3 border border-gray-200 dark:border-[#333] rounded-xl disabled:opacity-20 text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all shadow-xl transition-colors"
             >
               <FiChevronLeft size={20} />
             </button>
 
             <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] transition-colors">
-              Cycle{" "}
-              <span className="text-gray-900 dark:text-white transition-colors">
-                {page + 1}
-              </span>{" "}
-              / {totalPages}
+              Cycle <span className="text-gray-900 dark:text-white transition-colors">{page + 1}</span> / {totalPages}
             </span>
 
             <button
               disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               className="p-3 border border-gray-200 dark:border-[#333] rounded-xl disabled:opacity-20 text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all shadow-xl transition-colors"
             >
               <FiChevronRight size={20} />
@@ -260,15 +214,9 @@ export default function AdminNGOs() {
                   {selectedNGO.ngoName?.charAt(0)}
                 </div>
                 <div>
-                  <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">
-                    Dossier File
-                  </span>
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">
-                    {selectedNGO.ngoName}
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-500 text-sm mt-1 transition-colors">
-                    {selectedNGO.email}
-                  </p>
+                  <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">Dossier File</span>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">{selectedNGO.ngoName}</h2>
+                  <p className="text-gray-600 dark:text-gray-500 text-sm mt-1 transition-colors">{selectedNGO.email}</p>
                 </div>
               </div>
 
@@ -277,33 +225,17 @@ export default function AdminNGOs() {
                   <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <FiFileText size={80} className="text-[#D4AF37]" />
                   </div>
-                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">
-                    Organizational Context
-                  </h4>
+                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">Organizational Context</h4>
                   <div className="space-y-4">
                     <InfoRow label="Sector Type" value={selectedNGO.ngoType} />
-                    <InfoRow
-                      label="Enrollment ID"
-                      value={selectedNGO.registrationNumber}
-                    />
+                    <InfoRow label="Enrollment ID" value={selectedNGO.registrationNumber} />
                     <div className="pt-2">
-                      <span className="text-[9px] text-gray-400 dark:text-gray-600 block mb-1 font-bold uppercase tracking-widest transition-colors">
-                        Digital Presence
-                      </span>
+                      <span className="text-[9px] text-gray-400 dark:text-gray-600 block mb-1 font-bold uppercase tracking-widest transition-colors">Digital Presence</span>
                       {selectedNGO.websiteUrl ? (
-                        <a
-                          href={selectedNGO.websiteUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[#D4AF37] text-sm font-medium hover:underline flex items-center gap-2"
-                        >
+                        <a href={selectedNGO.websiteUrl} target="_blank" rel="noreferrer" className="text-[#D4AF37] text-sm font-medium hover:underline flex items-center gap-2">
                           <FiGlobe className="w-3 h-3" /> External Link
                         </a>
-                      ) : (
-                        <span className="text-gray-900 dark:text-white text-sm font-medium transition-colors">
-                          N/A
-                        </span>
-                      )}
+                      ) : <span className="text-gray-900 dark:text-white text-sm font-medium transition-colors">N/A</span>}
                     </div>
                   </div>
                 </div>
@@ -312,35 +244,22 @@ export default function AdminNGOs() {
                   <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <FiMapPin size={80} className="text-[#D4AF37]" />
                   </div>
-                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">
-                    Regional Coordinates
-                  </h4>
+                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">Regional Coordinates</h4>
                   <div className="space-y-4">
                     <InfoRow label="City Hub" value={selectedNGO.city} />
                     <InfoRow label="District" value={selectedNGO.district} />
                     <InfoRow label="State" value={selectedNGO.state} />
                     <div className="pt-2">
-                      <span className="text-[9px] text-gray-400 dark:text-gray-600 block mb-1 font-bold uppercase tracking-widest transition-colors">
-                        Office Address
-                      </span>
-                      <p className="text-sm text-gray-900 dark:text-white font-medium break-words leading-relaxed transition-colors">
-                        {selectedNGO.address}
-                      </p>
+                      <span className="text-[9px] text-gray-400 dark:text-gray-600 block mb-1 font-bold uppercase tracking-widest transition-colors">Office Address</span>
+                      <p className="text-sm text-gray-900 dark:text-white font-medium break-words leading-relaxed transition-colors">{selectedNGO.address}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-[#222] p-6 rounded-2xl transition-colors">
-                <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-4">
-                  Manifesto / Description
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed italic transition-colors">
-                  "
-                  {selectedNGO.description ||
-                    "Historical organizational data unavailable."}
-                  "
-                </p>
+                <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-4">Manifesto / Description</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed italic transition-colors">"{selectedNGO.description || "Historical organizational data unavailable."}"</p>
               </div>
 
               <div className="footer-actions flex justify-end gap-4 pt-10 border-t border-gray-100 dark:border-[#222] transition-colors">
@@ -383,11 +302,7 @@ export default function AdminNGOs() {
 
 const InfoRow = ({ label, value }) => (
   <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest border-b border-gray-100 dark:border-[#222] pb-2 last:border-0 transition-colors">
-    <span className="text-gray-400 dark:text-gray-600 transition-colors">
-      {label}
-    </span>
-    <span className="text-gray-900 dark:text-white transition-colors">
-      {value || "Unverified"}
-    </span>
+    <span className="text-gray-400 dark:text-gray-600 transition-colors">{label}</span>
+    <span className="text-gray-900 dark:text-white transition-colors">{value || "Unverified"}</span>
   </div>
 );

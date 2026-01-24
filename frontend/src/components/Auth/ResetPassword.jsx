@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { resetPassword } from "../../api/auth";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-import logo from "../../assets/LOGO.png";
+import logo from "../../assets/logo.png";
 import { toast } from "react-toastify";
 
 export default function ResetPassword() {
@@ -38,21 +38,11 @@ export default function ResetPassword() {
   const handleBlur = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     if (field === "password") {
-      setValidationErrors((prev) => ({
-        ...prev,
-        password: validatePassword(password),
-      }));
-      if (confirm)
-        setValidationErrors((prev) => ({
-          ...prev,
-          confirm: validateConfirm(confirm, password),
-        }));
+      setValidationErrors((prev) => ({ ...prev, password: validatePassword(password) }));
+      if (confirm) setValidationErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, password) }));
     }
     if (field === "confirm") {
-      setValidationErrors((prev) => ({
-        ...prev,
-        confirm: validateConfirm(confirm, password),
-      }));
+      setValidationErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, password) }));
     }
   };
 
@@ -62,23 +52,14 @@ export default function ResetPassword() {
 
     if (touched[field]) {
       if (field === "password") {
-        setValidationErrors((prev) => ({
-          ...prev,
-          password: validatePassword(val),
-        }));
+        setValidationErrors((prev) => ({ ...prev, password: validatePassword(val) }));
         // Re-validate confirm if password changes
         if (touched.confirm) {
-          setValidationErrors((prev) => ({
-            ...prev,
-            confirm: validateConfirm(confirm, val),
-          }));
+          setValidationErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, val) }));
         }
       }
       if (field === "confirm") {
-        setValidationErrors((prev) => ({
-          ...prev,
-          confirm: validateConfirm(val, password),
-        }));
+        setValidationErrors((prev) => ({ ...prev, confirm: validateConfirm(val, password) }));
       }
     }
   };
@@ -102,9 +83,7 @@ export default function ResetPassword() {
     try {
       await resetPassword({ email, role, newPassword: password });
       toast.success("Password reset successfully! Please login.");
-      navigate("/login", {
-        state: { success: "Password reset successfully!" },
-      });
+      navigate("/login", { state: { success: "Password reset successfully!" } });
     } catch (err) {
       const errMsg = err?.response?.data?.message || "Failed to reset password";
       setError(errMsg);
@@ -133,15 +112,9 @@ export default function ResetPassword() {
 
           <div className="absolute bottom-0 left-0 p-12 text-[#E5E5E5] z-10">
             <div className="w-20 h-20 mb-6 flex items-center justify-center border-2 border-[#D4AF37]/30 rounded-full bg-black/50 backdrop-blur-md">
-              <img
-                src={logo}
-                alt="Logo"
-                className="w-12 h-12 object-contain brightness-0 invert"
-              />
+              <img src={logo} alt="Logo" className="w-12 h-12 object-contain brightness-0 invert" />
             </div>
-            <h2 className="text-5xl font-bold mb-4 tracking-tight font-serif text-[#D4AF37]">
-              AdvoCare
-            </h2>
+            <h2 className="text-5xl font-bold mb-4 tracking-tight font-serif text-[#D4AF37]">AdvoCare</h2>
             <p className="text-gray-300 text-lg font-light leading-relaxed max-w-md border-l-4 border-[#D4AF37] pl-4">
               Secure your future today.
             </p>
@@ -152,20 +125,15 @@ export default function ResetPassword() {
         <div className="w-full h-full flex flex-col justify-center p-10 md:p-16 bg-white dark:bg-[#1a1a1a] relative border-l border-gray-100 dark:border-[#333] transition-colors">
           <div className="max-w-md mx-auto w-full">
             <div className="mb-10 text-center md:text-left">
-              <h2 className="text-4xl font-bold text-[#D4AF37] mb-2 font-serif">
-                Reset Password
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 font-sans transition-colors">
-                Create a strong new password.
-              </p>
+              <h2 className="text-4xl font-bold text-[#D4AF37] mb-2 font-serif">Reset Password</h2>
+              <p className="text-gray-500 dark:text-gray-400 font-sans transition-colors">Create a strong new password.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+
               {/* NEW PASSWORD */}
               <div className="group">
-                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">
-                  New Password
-                </label>
+                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">New Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FiLock className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-[#D4AF37] transition-colors" />
@@ -175,7 +143,7 @@ export default function ResetPassword() {
                     value={password}
                     onChange={(e) => handleChange("password", e.target.value)}
                     onBlur={() => handleBlur("password")}
-                    className={`block w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.password && validationErrors.password ? "border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10" : "border-gray-200 dark:border-[#333]"} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
+                    className={`block w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.password && validationErrors.password ? 'border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10' : 'border-gray-200 dark:border-[#333]'} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
                     placeholder="Min 6 characters"
                   />
                   <button
@@ -183,25 +151,17 @@ export default function ResetPassword() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-[#D4AF37] focus:outline-none cursor-pointer"
                   >
-                    {showPassword ? (
-                      <FiEyeOff className="h-5 w-5" />
-                    ) : (
-                      <FiEye className="h-5 w-5" />
-                    )}
+                    {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                   </button>
                 </div>
                 {touched.password && validationErrors.password && (
-                  <p className="text-red-500 text-xs mt-1 font-sans">
-                    {validationErrors.password}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1 font-sans">{validationErrors.password}</p>
                 )}
               </div>
 
               {/* CONFIRM PASSWORD */}
               <div className="group">
-                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">
-                  Confirm Password
-                </label>
+                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wide group-focus-within:text-[#D4AF37] transition-colors">Confirm Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FiLock className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-[#D4AF37] transition-colors" />
@@ -211,7 +171,7 @@ export default function ResetPassword() {
                     value={confirm}
                     onChange={(e) => handleChange("confirm", e.target.value)}
                     onBlur={() => handleBlur("confirm")}
-                    className={`block w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.confirm && validationErrors.confirm ? "border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10" : "border-gray-200 dark:border-[#333]"} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
+                    className={`block w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-[#252525] border ${touched.confirm && validationErrors.confirm ? 'border-red-500 bg-red-50 dark:border-red-900 dark:bg-red-900/10' : 'border-gray-200 dark:border-[#333]'} text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#D4AF37] dark:focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans text-sm`}
                     placeholder="Re-enter password"
                   />
                   <button
@@ -219,40 +179,18 @@ export default function ResetPassword() {
                     onClick={() => setShowConfirm(!showConfirm)}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-[#D4AF37] focus:outline-none cursor-pointer"
                   >
-                    {showConfirm ? (
-                      <FiEyeOff className="h-5 w-5" />
-                    ) : (
-                      <FiEye className="h-5 w-5" />
-                    )}
+                    {showConfirm ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                   </button>
                 </div>
                 {touched.confirm && validationErrors.confirm && (
-                  <p className="text-red-500 text-xs mt-1 font-sans">
-                    {validationErrors.confirm}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1 font-sans">{validationErrors.confirm}</p>
                 )}
               </div>
 
               {error && (
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 flex items-start gap-3 transition-colors">
-                  <span className="text-red-500 mt-0.5">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </span>
-                  <div className="text-sm text-red-600 dark:text-red-400 font-sans transition-colors">
-                    {error}
-                  </div>
+                  <span className="text-red-500 mt-0.5"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                  <div className="text-sm text-red-600 dark:text-red-400 font-sans transition-colors">{error}</div>
                 </div>
               )}
 

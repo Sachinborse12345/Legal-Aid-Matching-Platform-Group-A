@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiClock, FiPlus, FiChevronLeft, FiChevronRight, FiCheckCircle, FiInfo, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiPlus, FiChevronLeft, FiChevronRight, FiCheckCircle, FiInfo, FiTrash2, FiCheck, FiX, FiFileText, FiUser, FiDownload } from 'react-icons/fi';
 import { getMyAppointments, scheduleAppointment, updateAppointmentStatus } from '../../api/appointmentApi';
+import { getMyAssignedCases, assignCase, unassignCase, getCaseById } from '../../api/caseApi';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'sonner';
 
@@ -20,6 +21,9 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
 
     const [conflictInfo, setConflictInfo] = useState(null);
     const [showConflictModal, setShowConflictModal] = useState(false);
+    const [assignedMap, setAssignedMap] = useState(new Map());
+    const [viewingCase, setViewingCase] = useState(null);
+    const [caseDetailLoading, setCaseDetailLoading] = useState(false);
 
     const isCitizen = (profile?.role || localStorage.getItem("role")) === "CITIZEN";
 
@@ -73,6 +77,62 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
         window.addEventListener('appointmentUpdated', handleUpdate);
         return () => window.removeEventListener('appointmentUpdated', handleUpdate);
     }, []);
+
+    const fetchAssigned = async () => {
+        if (isCitizen) return;
+        try {
+            const res = await getMyAssignedCases();
+            const list = res.data || [];
+            const map = new Map();
+            list.forEach((a) => map.set(a.caseId, { matchId: a.matchId, appointmentId: a.appointmentId }));
+            setAssignedMap(map);
+        } catch (e) {
+            console.warn("Failed to fetch assigned cases", e);
+        }
+    };
+
+    useEffect(() => {
+        fetchAssigned();
+    }, [isCitizen]);
+
+    const handleTakeCase = async (appt) => {
+        if (!appt.caseId) return;
+        try {
+            await assignCase(appt.caseId, appt.id);
+            toast.success("Case assigned to you.");
+            await fetchAssigned();
+            window.dispatchEvent(new CustomEvent('appointmentUpdated'));
+        } catch (e) {
+            toast.error(e.response?.data || "Failed to take case.");
+        }
+    };
+
+    const handleCancelCase = async (appt) => {
+        if (!appt.caseId) return;
+        const a = assignedMap.get(appt.caseId);
+        if (!a?.matchId) return;
+        try {
+            await unassignCase(appt.caseId, { matchId: a.matchId });
+            toast.success("Case assignment cancelled.");
+            await fetchAssigned();
+            window.dispatchEvent(new CustomEvent('appointmentUpdated'));
+        } catch (e) {
+            toast.error(e.response?.data || "Failed to cancel assignment.");
+        }
+    };
+
+    const handleViewCaseDetails = async (caseId) => {
+        setCaseDetailLoading(true);
+        setViewingCase(null);
+        try {
+            const res = await getCaseById(caseId);
+            setViewingCase(res.data);
+        } catch (e) {
+            toast.error(e.response?.data || "Could not load case details.");
+        } finally {
+            setCaseDetailLoading(false);
+        }
+    };
 
     const fetchAvailability = async () => {
         console.log("DEBUG: Schedule.jsx - fetchAvailability called. isCitizen:", isCitizen, "Role:", (profile?.role || localStorage.getItem("role")));
@@ -132,7 +192,10 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
                 startTime,
                 endTime,
                 type: formData.title,
-                description: force ? "[FORCE] " + (formData.notes || "") : formData.notes
+                description: force ? "[FORCE] " + (formData.notes || "") : formData.notes,
+                caseId: profile?.initialAppointmentData?.caseId || null,
+                caseTitle: profile?.initialAppointmentData?.caseTitle || null,
+                caseSummary: profile?.initialAppointmentData?.caseSummary || null
             };
 
             console.log('DEBUG: [Schedule] Booking appointment with payload:', payload);
@@ -192,9 +255,9 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
             await updateAppointmentStatus(id, status);
             toast.success(`Appointment ${status.toLowerCase()}ed!`);
             await fetchAppointments();
-            if (refetchAppointments) {
-                await refetchAppointments();
-            }
+            if (refetchAppointments) await refetchAppointments();
+            if (!isCitizen) await fetchAssigned();
+            window.dispatchEvent(new CustomEvent('appointmentUpdated'));
         } catch (err) {
             console.error(err);
             toast.error("Failed to update appointment status");
@@ -298,9 +361,18 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
                                 {selectedDate.toLocaleDateString('default', { month: 'long', day: 'numeric' })}
                             </h3>
                             {profile?.initialAppointmentData?.providerName && (
-                                <p className="text-[11px] text-gray-500 mt-3 font-medium flex items-center gap-2">
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 font-medium flex items-center gap-2">
                                     Target Link: <span className="text-[#D4AF37] font-black uppercase tracking-widest">{profile.initialAppointmentData.providerName}</span>
                                 </p>
+                            )}
+                            {profile?.initialAppointmentData?.caseTitle && (
+                                <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-[#222]">
+                                    <p className="text-[10px] font-black text-[#D4AF37] uppercase tracking-widest mb-1">Case for this protocol</p>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white">{profile.initialAppointmentData.caseTitle}</p>
+                                    {profile?.initialAppointmentData?.caseSummary && (
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">{profile.initialAppointmentData.caseSummary}</p>
+                                    )}
+                                </div>
                             )}
                         </div>
 
@@ -317,6 +389,7 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
                                             <button
                                                 key={slot.time}
                                                 disabled={slot.status === 'BOOKED' || slot.status === 'UNAVAILABLE'}
+                                                title={slot.status === 'UNAVAILABLE' && slot.unavailabilityReason ? `Provider unavailable: ${slot.unavailabilityReason}` : null}
                                                 onClick={() => {
                                                     if (slot.status === 'AVAILABLE') {
                                                         setSelectedSlot(slot.time);
@@ -339,13 +412,25 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
                                                         <span className="text-[7px] text-amber-500/60 font-black animate-pulse">CONFLICT</span>
                                                     )}
                                                     {slot.status === 'UNAVAILABLE' && (
-                                                        <span className="text-[7px] text-gray-500/60 font-black">UNAVAILABLE</span>
+                                                        <>
+                                                            <span className="text-[7px] text-gray-500/60 font-black">UNAVAILABLE</span>
+                                                            {slot.unavailabilityReason && (
+                                                                <span className="text-[6px] text-gray-500/80 font-bold leading-tight max-w-[4.5rem] truncate" title={slot.unavailabilityReason}>
+                                                                    {slot.unavailabilityReason}
+                                                                </span>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
                                             </button>
                                         ))
                                     )}
                                 </div>
+                                {isCitizen && availability.some(s => s.status === 'UNAVAILABLE' && s.unavailabilityReason) && (
+                                    <p className="mt-3 text-[9px] text-gray-500 dark:text-gray-400 font-medium">
+                                        Hover over unavailable slots to see the provider&apos;s reason.
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-5">
@@ -441,6 +526,15 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
 
                                     <div className="space-y-2">
                                         <h4 className="text-lg font-bold text-gray-900 dark:text-white font-serif">{appt.type}</h4>
+                                        {(appt.caseTitle || appt.caseSummary) && (
+                                            <div className="rounded-xl bg-[#D4AF37]/5 dark:bg-[#D4AF37]/10 border border-[#D4AF37]/20 p-4 mt-2">
+                                                <p className="text-[10px] font-black text-[#D4AF37] uppercase tracking-widest mb-2">Case for this protocol</p>
+                                                {appt.caseTitle && <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">{appt.caseTitle}</p>}
+                                                {appt.caseSummary && (
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400">{appt.caseSummary}</p>
+                                                )}
+                                            </div>
+                                        )}
                                         {appt.providerName && (
                                             <p className="text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.2em] pt-1">
                                                 Session with: {appt.providerName}
@@ -456,7 +550,7 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
                                         </p>
                                     </div>
 
-                                    {/* Action Buttons for Lawyers */}
+                                    {/* Action Buttons for Lawyers/NGOs */}
                                     {!isCitizen && appt.status === 'PENDING' && (
                                         <div className="mt-6 flex gap-3 pt-6 border-t border-gray-200 dark:border-[#222]">
                                             <button
@@ -477,12 +571,92 @@ export default function Schedule({ profile, externalAppointments, refetchAppoint
                                             </button>
                                         </div>
                                     )}
+                                    {!isCitizen && appt.status === 'CONFIRMED' && appt.caseId && (
+                                        <div className="mt-6 flex flex-wrap gap-3 pt-6 border-t border-gray-200 dark:border-[#222]">
+                                            <button
+                                                onClick={() => handleViewCaseDetails(appt.caseId)}
+                                                className="px-4 py-3 bg-gray-100 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-[#252525] transition font-bold text-sm flex items-center gap-2 border border-gray-200 dark:border-[#333]"
+                                            >
+                                                <FiFileText size={16} />
+                                                <span>View Case Details</span>
+                                            </button>
+                                            {assignedMap.has(appt.caseId) ? (
+                                                <button
+                                                    onClick={() => handleCancelCase(appt)}
+                                                    className="px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm flex items-center gap-2"
+                                                >
+                                                    <FiX size={16} />
+                                                    <span>Cancel Case</span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleTakeCase(appt)}
+                                                    className="px-4 py-3 bg-[#D4AF37] text-black rounded-xl hover:bg-[#c5a059] transition font-bold text-sm flex items-center gap-2"
+                                                >
+                                                    <FiCheck size={16} />
+                                                    <span>Take Case</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* View Case Details Modal (Lawyer/NGO) */}
+            {(viewingCase !== null || caseDetailLoading) && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-md bg-black/60 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-[#0f0f0f] border border-[#D4AF37]/30 rounded-[2.5rem] p-10 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-[#D4AF37] opacity-50 rounded-t-[2.5rem]"></div>
+                        {caseDetailLoading ? (
+                            <div className="py-16 text-center">
+                                <div className="w-12 h-12 border-4 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin mx-auto mb-4"></div>
+                                <p className="text-sm font-bold text-gray-500">Loading case details…</p>
+                            </div>
+                        ) : viewingCase ? (
+                            <>
+                                <div className="flex justify-between items-start mb-6">
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white font-serif">Case Details</h3>
+                                    <button onClick={() => setViewingCase(null)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#222] text-gray-500">
+                                        <FiX size={20} />
+                                    </button>
+                                </div>
+                                <div className="space-y-4 text-sm">
+                                    <div><span className="font-bold text-[#D4AF37] uppercase tracking-wider">Title</span><p className="text-gray-900 dark:text-white mt-1">{viewingCase.caseTitle || '—'}</p></div>
+                                    <div><span className="font-bold text-[#D4AF37] uppercase tracking-wider">Type</span><p className="text-gray-900 dark:text-white mt-1">{viewingCase.caseType || '—'}</p></div>
+                                    <div><span className="font-bold text-[#D4AF37] uppercase tracking-wider">Urgency</span><p className="text-gray-900 dark:text-white mt-1">{viewingCase.urgency || '—'}</p></div>
+                                    <div><span className="font-bold text-[#D4AF37] uppercase tracking-wider">Location</span><p className="text-gray-900 dark:text-white mt-1">{viewingCase.incidentPlace || '—'}</p></div>
+                                    <div><span className="font-bold text-[#D4AF37] uppercase tracking-wider">Victim</span><p className="text-gray-900 dark:text-white mt-1">{viewingCase.victimName || '—'} {viewingCase.relation ? `(${viewingCase.relation})` : ''}</p></div>
+                                    {viewingCase.background && <div><span className="font-bold text-[#D4AF37] uppercase tracking-wider">Background</span><p className="text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">{viewingCase.background}</p></div>}
+                                    {viewingCase.relief && <div><span className="font-bold text-[#D4AF37] uppercase tracking-wider">Relief Sought</span><p className="text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">{viewingCase.relief}</p></div>}
+                                    {viewingCase.documentsUrl && (
+                                        <div className="pt-4 border-t border-gray-200 dark:border-[#222]">
+                                            <span className="font-bold text-[#D4AF37] uppercase tracking-wider">Case documents</span>
+                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">Shared by the citizen. View or download below.</p>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {viewingCase.documentsUrl.split(',').map((url, idx) => (
+                                                    <a
+                                                        key={idx}
+                                                        href={url.trim()}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20 border border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/20 dark:hover:bg-[#D4AF37]/30 text-xs font-bold uppercase tracking-wider"
+                                                    >
+                                                        <FiDownload size={14} /> Document {idx + 1}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : null}
+                    </div>
+                </div>
+            )}
 
             {/* Conflict Confirmation Modal */}
             {

@@ -11,5 +11,9 @@ import java.util.Optional;
 public interface CaseMatchRepository extends JpaRepository<CaseMatch, Long> {
     List<CaseMatch> findByCaseId(Long caseId);
 
+    List<CaseMatch> findByCaseIdAndStatus(Long caseId, String status);
+
     Optional<CaseMatch> findByCaseIdAndProviderIdAndProviderRole(Long caseId, Integer providerId, String providerRole);
+
+    List<CaseMatch> findByProviderIdAndProviderRoleAndStatus(Integer providerId, String providerRole, String status);
 }

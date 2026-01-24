@@ -60,6 +60,17 @@ export default function ViewAppointmentModal({ appointment, onClose }) {
                         </div>
                     </div>
 
+                    {/* Case for this protocol */}
+                    {(appointment.caseTitle || appointment.caseSummary) && (
+                        <div className="bg-[#D4AF37]/5 dark:bg-[#D4AF37]/10 border border-[#D4AF37]/20 p-4 rounded-lg">
+                            <p className="text-[10px] font-black text-[#D4AF37] uppercase tracking-widest mb-2">Case for this protocol</p>
+                            {appointment.caseTitle && <p className="text-gray-900 dark:text-white font-semibold text-base mb-1">{appointment.caseTitle}</p>}
+                            {appointment.caseSummary && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{appointment.caseSummary}</p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Status */}
                     <div className="flex items-center space-x-4">
                         <div className={`p-3 rounded-lg ${appointment.status === 'CONFIRMED' ? 'bg-green-100 text-green-600' :

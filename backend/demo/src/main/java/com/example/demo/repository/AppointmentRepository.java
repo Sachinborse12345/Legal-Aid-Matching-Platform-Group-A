@@ -70,4 +70,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
         @Query("SELECT a FROM Appointment a WHERE a.providerId = :providerId AND UPPER(a.providerRole) = UPPER(:providerRole) AND a.endTime >= :now ORDER BY a.startTime ASC")
         List<Appointment> findUpcomingAppointmentsByProvider(@Param("providerId") Integer providerId, @Param("providerRole") String providerRole, @Param("now") LocalDateTime now);
+
+        @Query("SELECT a FROM Appointment a WHERE a.caseId = :caseId AND a.providerId = :providerId AND UPPER(a.providerRole) = UPPER(:providerRole) AND UPPER(a.status) = 'CONFIRMED'")
+        List<Appointment> findByCaseIdAndProviderIdAndProviderRoleAndStatusConfirmed(@Param("caseId") Long caseId, @Param("providerId") Integer providerId, @Param("providerRole") String providerRole);
 }

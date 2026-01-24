@@ -255,7 +255,7 @@ export default function LawyerProfile({ profile, setProfile, isEditing, setIsEdi
             setFormData(updatedProfile);
             setIsEditing(false);
             
-            toast.success("Profile updated successfully!", {
+            toast.success("✅ Profile updated successfully!", {
                 position: "top-right",
                 autoClose: 3000,
             });

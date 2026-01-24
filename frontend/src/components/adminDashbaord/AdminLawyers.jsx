@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  FiSearch,
-  FiUser,
-  FiMapPin,
-  FiBriefcase,
-  FiCheck,
-  FiShield,
-  FiChevronLeft,
-  FiChevronRight,
-  FiX,
-} from "react-icons/fi";
+import { FiSearch, FiUser, FiMapPin, FiBriefcase, FiCheck, FiShield, FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
 import axios from "axios";
 
 export default function AdminLawyers() {
@@ -27,12 +17,9 @@ export default function AdminLawyers() {
 
   const fetchLawyers = async () => {
     try {
-      const response = await axios.get(
-        "https://advocare-backend-gkg0.onrender.com/api/lawyers",
-        {
-          params: { page, size: pageSize },
-        },
-      );
+      const response = await axios.get("http://localhost:8080/api/lawyers", {
+        params: { page, size: pageSize }
+      });
       if (response.data.content) {
         setLawyers(response.data.content);
         setTotalPages(response.data.totalPages);
@@ -48,14 +35,8 @@ export default function AdminLawyers() {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(
-        `https://advocare-backend-gkg0.onrender.com/api/lawyers/${id}/approve`,
-      );
-      setLawyers(
-        lawyers.map((l) =>
-          l.id === id ? { ...l, isApproved: true, adminStatus: "APPROVED" } : l,
-        ),
-      );
+      await axios.put(`http://localhost:8080/api/lawyers/${id}/approve`);
+      setLawyers(lawyers.map(l => l.id === id ? { ...l, isApproved: true, adminStatus: "APPROVED" } : l));
     } catch (error) {
       console.error("Approval failed:", error);
     }
@@ -63,23 +44,10 @@ export default function AdminLawyers() {
 
   const handleReject = async (id) => {
     try {
-      if (
-        !window.confirm(
-          "Are you sure you want to reject this lawyer application?",
-        )
-      )
-        return;
-      await axios.put(
-        `https://advocare-backend-gkg0.onrender.com/api/lawyers/${id}/reject`,
-      );
+      if (!window.confirm("Are you sure you want to reject this lawyer application?")) return;
+      await axios.put(`http://localhost:8080/api/lawyers/${id}/reject`);
       alert("Lawyer application rejected.");
-      setLawyers(
-        lawyers.map((l) =>
-          l.id === id
-            ? { ...l, isApproved: false, adminStatus: "REJECTED" }
-            : l,
-        ),
-      );
+      setLawyers(lawyers.map(l => l.id === id ? { ...l, isApproved: false, adminStatus: "REJECTED" } : l));
     } catch (error) {
       console.error("Rejection failed:", error);
       alert("Failed to reject lawyer.");
@@ -98,12 +66,8 @@ export default function AdminLawyers() {
       <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-2xl shadow-2xl p-8 relative overflow-hidden transition-colors">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 relative z-10">
           <div>
-            <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">
-              Provider Governance
-            </span>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">
-              Lawyer Registry
-            </h2>
+            <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">Provider Governance</span>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">Lawyer Registry</h2>
           </div>
           <div className="relative group w-full md:w-96">
             <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#D4AF37]/50 group-focus-within:text-[#D4AF37] transition-colors" />
@@ -120,16 +84,12 @@ export default function AdminLawyers() {
         {loading ? (
           <div className="py-20 text-center flex flex-col items-center">
             <div className="w-10 h-10 border-4 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin mb-4"></div>
-            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">
-              Retrieving Records...
-            </p>
+            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">Retrieving Records...</p>
           </div>
         ) : filteredLawyers.length === 0 ? (
           <div className="py-20 text-center bg-gray-50 dark:bg-[#111] rounded-2xl border border-dashed border-gray-200 dark:border-[#333] transition-colors">
             <FiUser className="w-12 h-12 text-gray-300 dark:text-gray-800 mx-auto mb-4 opacity-30 transition-colors" />
-            <p className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest text-[10px] transition-colors">
-              No matches found in the legal vault
-            </p>
+            <p className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest text-[10px] transition-colors">No matches found in the legal vault</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -143,12 +103,8 @@ export default function AdminLawyers() {
                     {lawyer.fullName?.charAt(0)}
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-lg mb-1 truncate group-hover:text-[#D4AF37] transition-colors">
-                      {lawyer.fullName}
-                    </h3>
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest truncate transition-colors">
-                      {lawyer.email}
-                    </p>
+                    <h3 className="font-bold text-gray-900 dark:text-white font-serif tracking-tight text-lg mb-1 truncate group-hover:text-[#D4AF37] transition-colors">{lawyer.fullName}</h3>
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest truncate transition-colors">{lawyer.email}</p>
                   </div>
                 </div>
 
@@ -191,6 +147,30 @@ export default function AdminLawyers() {
                     >
                       Details
                     </button>
+                    {!lawyer.isApproved && lawyer.adminStatus !== "REJECTED" && (
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => handleApprove(lawyer.id)}
+                          className="text-[9px] font-black uppercase tracking-widest bg-[#D4AF37] text-black px-4 py-1.5 rounded-lg hover:bg-[#c5a059] transition-all shadow-xl shadow-[#D4AF37]/10 w-full"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleReject(lawyer.id)}
+                          className="text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-1.5 rounded-lg hover:bg-red-500 hover:text-white transition-all w-full"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedLawyer(lawyer)}
+                      className="text-[9px] font-black uppercase tracking-widest text-[#D4AF37] hover:bg-[#D4AF37]/10 px-3 py-1.5 rounded-lg transition-all"
+                    >
+                      Details
+                    </button>
                     {!lawyer.isApproved &&
                       lawyer.adminStatus !== "REJECTED" && (
                         <div className="flex flex-col gap-2">
@@ -220,23 +200,19 @@ export default function AdminLawyers() {
           <div className="flex justify-center items-center gap-8 mt-12 pt-8 border-t border-gray-100 dark:border-[#222] transition-colors">
             <button
               disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              onClick={() => setPage(p => Math.max(0, p - 1))}
               className="p-3 border border-gray-200 dark:border-[#333] rounded-xl disabled:opacity-20 text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all shadow-xl transition-colors"
             >
               <FiChevronLeft size={20} />
             </button>
 
             <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] transition-colors">
-              Cycle{" "}
-              <span className="text-gray-900 dark:text-white transition-colors">
-                {page + 1}
-              </span>{" "}
-              / {totalPages}
+              Cycle <span className="text-gray-900 dark:text-white transition-colors">{page + 1}</span> / {totalPages}
             </span>
 
             <button
               disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               className="p-3 border border-gray-200 dark:border-[#333] rounded-xl disabled:opacity-20 text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all shadow-xl transition-colors"
             >
               <FiChevronRight size={20} />
@@ -262,15 +238,9 @@ export default function AdminLawyers() {
                   {selectedLawyer.fullName?.charAt(0)}
                 </div>
                 <div>
-                  <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">
-                    Dossier File
-                  </span>
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">
-                    {selectedLawyer.fullName}
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-500 text-sm mt-1 transition-colors">
-                    {selectedLawyer.email}
-                  </p>
+                  <span className="text-[#D4AF37] text-[10px] font-black uppercase tracking-[0.3em] mb-2 block">Dossier File</span>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white font-serif tracking-tight transition-colors">{selectedLawyer.fullName}</h2>
+                  <p className="text-gray-600 dark:text-gray-500 text-sm mt-1 transition-colors">{selectedLawyer.email}</p>
                 </div>
               </div>
 
@@ -279,30 +249,12 @@ export default function AdminLawyers() {
                   <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <FiBriefcase size={80} className="text-[#D4AF37]" />
                   </div>
-                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">
-                    Professional Context
-                  </h4>
+                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">Professional Context</h4>
                   <div className="space-y-4">
-                    <InfoRow
-                      label="Specialization"
-                      value={selectedLawyer.specialization}
-                    />
-                    <InfoRow
-                      label="Experience"
-                      value={
-                        selectedLawyer.experienceYears
-                          ? `${selectedLawyer.experienceYears} Years`
-                          : "N/A"
-                      }
-                    />
-                    <InfoRow
-                      label="Bar ID"
-                      value={selectedLawyer.barCouncilId}
-                    />
-                    <InfoRow
-                      label="Bar State"
-                      value={selectedLawyer.barState}
-                    />
+                    <InfoRow label="Specialization" value={selectedLawyer.specialization} />
+                    <InfoRow label="Experience" value={selectedLawyer.experienceYears ? `${selectedLawyer.experienceYears} Years` : "N/A"} />
+                    <InfoRow label="Bar ID" value={selectedLawyer.barCouncilId} />
+                    <InfoRow label="Bar State" value={selectedLawyer.barState} />
                   </div>
                 </div>
 
@@ -310,20 +262,14 @@ export default function AdminLawyers() {
                   <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <FiMapPin size={80} className="text-[#D4AF37]" />
                   </div>
-                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">
-                    Regional Coordinates
-                  </h4>
+                  <h4 className="text-[#D4AF37] text-[9px] font-black uppercase tracking-widest mb-6">Regional Coordinates</h4>
                   <div className="space-y-4">
                     <InfoRow label="City Hub" value={selectedLawyer.city} />
                     <InfoRow label="District" value={selectedLawyer.district} />
                     <InfoRow label="State" value={selectedLawyer.state} />
                     <div className="pt-2">
-                      <span className="text-[9px] text-gray-400 dark:text-gray-600 block mb-1 font-bold uppercase tracking-widest transition-colors">
-                        Office Address
-                      </span>
-                      <p className="text-sm text-gray-900 dark:text-white font-medium break-words leading-relaxed transition-colors">
-                        {selectedLawyer.address}
-                      </p>
+                      <span className="text-[9px] text-gray-400 dark:text-gray-600 block mb-1 font-bold uppercase tracking-widest transition-colors">Office Address</span>
+                      <p className="text-sm text-gray-900 dark:text-white font-medium break-words leading-relaxed transition-colors">{selectedLawyer.address}</p>
                     </div>
                   </div>
                 </div>
@@ -369,11 +315,7 @@ export default function AdminLawyers() {
 
 const InfoRow = ({ label, value }) => (
   <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest border-b border-gray-100 dark:border-[#222] pb-2 last:border-0 transition-colors">
-    <span className="text-gray-400 dark:text-gray-600 transition-colors">
-      {label}
-    </span>
-    <span className="text-gray-900 dark:text-white transition-colors">
-      {value || "Unverified"}
-    </span>
+    <span className="text-gray-400 dark:text-gray-600 transition-colors">{label}</span>
+    <span className="text-gray-900 dark:text-white transition-colors">{value || "Unverified"}</span>
   </div>
 );
