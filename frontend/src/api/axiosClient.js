@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Centralized base API URL - use this for all API requests
-export const API_BASE = "http://localhost:8080/api";
+export const API_BASE = "https://advocare-backend-gkg0.onrender.com/api";
 
 const axiosClient = axios.create({
     baseURL: API_BASE,

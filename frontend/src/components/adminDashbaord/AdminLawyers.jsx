@@ -17,7 +17,7 @@ export default function AdminLawyers() {
 
   const fetchLawyers = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/lawyers", {
+      const response = await axios.get("https://advocare-backend-gkg0.onrender.com/api/lawyers", {
         params: { page, size: pageSize }
       });
       if (response.data.content) {
@@ -35,7 +35,7 @@ export default function AdminLawyers() {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:8080/api/lawyers/${id}/approve`);
+      await axios.put(`https://advocare-backend-gkg0.onrender.com/api/lawyers/${id}/approve`);
       setLawyers(lawyers.map(l => l.id === id ? { ...l, isApproved: true, adminStatus: "APPROVED" } : l));
     } catch (error) {
       console.error("Approval failed:", error);
@@ -45,7 +45,7 @@ export default function AdminLawyers() {
   const handleReject = async (id) => {
     try {
       if (!window.confirm("Are you sure you want to reject this lawyer application?")) return;
-      await axios.put(`http://localhost:8080/api/lawyers/${id}/reject`);
+      await axios.put(`https://advocare-backend-gkg0.onrender.com/api/lawyers/${id}/reject`);
       alert("Lawyer application rejected.");
       setLawyers(lawyers.map(l => l.id === id ? { ...l, isApproved: false, adminStatus: "REJECTED" } : l));
     } catch (error) {

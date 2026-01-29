@@ -17,7 +17,7 @@ export default function AdminNGOs() {
 
   const fetchNGOs = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/ngos", {
+      const response = await axios.get("https://advocare-backend-gkg0.onrender.com/api/ngos", {
         params: { page, size: pageSize }
       });
       if (response.data.content) {
@@ -35,7 +35,7 @@ export default function AdminNGOs() {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:8080/api/ngos/${id}/approve`);
+      await axios.put(`https://advocare-backend-gkg0.onrender.com/api/ngos/${id}/approve`);
       setNgos(ngos.map(n => n.id === id ? { ...n, isApproved: true, adminStatus: "APPROVED" } : n));
     } catch (error) {
       console.error("Approval failed:", error);
@@ -45,7 +45,7 @@ export default function AdminNGOs() {
   const handleReject = async (id) => {
     try {
       if (!window.confirm("Are you sure you want to reject this NGO application?")) return;
-      await axios.put(`http://localhost:8080/api/ngos/${id}/reject`);
+      await axios.put(`https://advocare-backend-gkg0.onrender.com/api/ngos/${id}/reject`);
       // Update state
       alert("NGO application rejected.");
       setNgos(ngos.map(n => n.id === id ? { ...n, isApproved: false, adminStatus: "REJECTED" } : n));

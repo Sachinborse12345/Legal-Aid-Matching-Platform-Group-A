@@ -32,7 +32,7 @@ export default function AdminAuditLogs() {
             setLoading(true);
             const token = localStorage.getItem("accessToken");
 
-            const response = await axios.get("http://localhost:8080/api/audit-logs", {
+            const response = await axios.get("https://advocare-backend-gkg0.onrender.com/api/audit-logs", {
                 headers: { Authorization: `Bearer ${token}` },
                 params: {
                     page: currentPage,

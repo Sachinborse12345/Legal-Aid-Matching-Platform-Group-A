@@ -1,7 +1,7 @@
 # Login API Documentation
 
 ## Endpoint
-**POST** `http://localhost:8080/api/auth/login`
+**POST** `https://advocare-backend-gkg0.onrender.com/api/auth/login`
 
 ## Headers
 ```
@@ -66,7 +66,7 @@ Content-Type: application/json
 
 ### Citizen Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "sachinborse7744@gmail.com",
@@ -77,7 +77,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ### Lawyer Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "lawyer@example.com",
@@ -88,7 +88,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ### NGO Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "ngo@example.com",
@@ -99,7 +99,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ### Admin Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://advocare-backend-gkg0.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin@advocare.com",
@@ -111,7 +111,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 ## Testing with Postman
 
 1. **Method**: POST
-2. **URL**: `http://localhost:8080/api/auth/login`
+2. **URL**: `https://advocare-backend-gkg0.onrender.com/api/auth/login`
 3. **Headers**: 
    - Key: `Content-Type`
    - Value: `application/json`

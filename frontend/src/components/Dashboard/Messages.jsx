@@ -147,7 +147,7 @@ export default function Messages({ setSelectedRecipient, selectedRecipient, prof
         if (!currentSession) return;
 
         // Get base URL from axiosClient or use default
-        const baseUrl = axiosClient.defaults.baseURL?.replace('/api', '') || 'http://localhost:8080';
+        const baseUrl = axiosClient.defaults.baseURL?.replace('/api', '') || 'https://advocare-backend-gkg0.onrender.com';
         const socket = new SockJS(`${baseUrl}/ws-chat`);
         const client = new Client({
             webSocketFactory: () => socket,

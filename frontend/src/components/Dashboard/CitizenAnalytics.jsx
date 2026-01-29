@@ -9,7 +9,7 @@ import { getMyCases } from '../../api/caseApi';
 import { FiCheckCircle, FiFileText, FiCalendar, FiMapPin } from 'react-icons/fi';
 
 // API Configuration
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "https://advocare-backend-gkg0.onrender.com/api";
 
 export default function CitizenAnalytics({ profile }) {
     const [data, setData] = useState(null);

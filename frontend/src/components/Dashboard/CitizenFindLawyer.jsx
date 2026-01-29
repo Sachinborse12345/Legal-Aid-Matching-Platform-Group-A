@@ -162,7 +162,7 @@ export default function CitizenFindLawyer({
       if (filterExperience) params.minExperience = parseInt(filterExperience);
 
       console.log("DEBUG: Fetching directory with params:", params);
-      const res = await axios.get("http://localhost:8080/api/directory/search", { params });
+      const res = await axios.get("https://advocare-backend-gkg0.onrender.com/api/directory/search", { params });
       console.log("DEBUG: Search results received:", res.data.totalElements);
       setItems(res.data.content);
       setTotalPages(res.data.totalPages);

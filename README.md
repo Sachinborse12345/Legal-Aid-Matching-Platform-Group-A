@@ -52,7 +52,7 @@ HOW TO START BACKEND (SPRING BOOT)
 
 4. Backend will start on:
 
-   http://localhost:8080
+   https://advocare-backend-gkg0.onrender.com
 
 
 --------------------------------
@@ -83,7 +83,7 @@ BACKEND - FRONTEND CONNECTION
 
 Ensure frontend API base URL points to:
 
-http://localhost:8080
+https://advocare-backend-gkg0.onrender.com
 
 (Check axiosClient.js or API configuration file)
 
