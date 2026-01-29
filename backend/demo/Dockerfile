@@ -3,10 +3,13 @@
 
     WORKDIR /app
     
-    COPY package*.json ./
+    # copy frontend package files
+    COPY frontend/package*.json ./
+    
     RUN npm install
     
-    COPY . .
+    # copy frontend source
+    COPY frontend .
     
     RUN npm run build
     
