@@ -3,8 +3,7 @@ import CitizenForm from "./CitizenForm";
 import LawyerForm from "./LawyerForm";
 import NGOForm from "./NGOForm";
 import { useNavigate, Link } from "react-router-dom";
-import logo from "/src/assets/LOGO.png
-";
+import logo from "/src/assets/LOGO.png";
 
 const Register = () => {
   const [role, setRole] = useState("Citizen");
