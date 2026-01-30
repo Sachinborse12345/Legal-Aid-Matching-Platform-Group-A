@@ -175,9 +175,15 @@
           "url": {
             "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       },
@@ -198,9 +204,15 @@
           "url": {
             "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       },
@@ -221,9 +233,15 @@
           "url": {
             "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       },
@@ -244,13 +262,18 @@
           "url": {
             "raw": "https://advocare-backend-gkg0.onrender.com/api/auth/login",
             "protocol": "http",
-            "host": ["localhost"],
+            "host": [
+              "localhost"
+            ],
             "port": "8080",
-            "path": ["api", "auth", "login"]
+            "path": [
+              "api",
+              "auth",
+              "login"
+            ]
           }
         }
       }
     ]
   }
 }
-
