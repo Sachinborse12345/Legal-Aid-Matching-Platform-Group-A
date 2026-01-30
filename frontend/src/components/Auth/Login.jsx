@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { loginUser, clearError } from "../../Redux/authSlice.js";
 import { toast } from "react-toastify";
 import { FiUser, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-import logo from "/src/assets/logo.png";
+import logo from "/src/assets/LOGO.png
+";
 
 export default function Login() {
   const dispatch = useDispatch();

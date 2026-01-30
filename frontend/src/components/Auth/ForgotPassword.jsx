@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { forgotPassword } from "../../api/auth";
 import { useNavigate, Link } from "react-router-dom";
 import { FiMail } from "react-icons/fi";
-import logo from "/src/assets/logo.png";
+import logo from "/src/assets/LOGO.png
+";
 import { toast } from "react-toastify";
 
 export default function ForgotPassword() {

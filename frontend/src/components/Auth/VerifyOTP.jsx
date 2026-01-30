@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { verifyOtp } from "../../api/auth";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FiCheckCircle } from "react-icons/fi";
-import logo from "/src/assets/logo.png";
+import logo from "/src/assets/LOGO.png
+";
 import { toast } from "react-toastify";
 
 export default function VerifyOTP() {

@@ -2,7 +2,8 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser, fetchUserProfile } from "../../Redux/authSlice.js";
-import appLogo from "../../assets/logo.png";
+import appLogo from "../../assets/LOGO.png
+";
 
 export default function AdminSidebar({
   profile: propProfile,

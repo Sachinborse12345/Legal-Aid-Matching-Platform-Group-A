@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../Redux/authSlice.js";
 import React from "react";
 import Navbar from "../pages/NavBar";
-import logo from "../assets/logo.png";
+import logo from "../assets/LOGO.png
+";
 import { FiArrowRight } from "react-icons/fi";
 
 export default function Home({ user }) {
