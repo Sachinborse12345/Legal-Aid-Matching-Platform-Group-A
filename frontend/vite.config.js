@@ -9,6 +9,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: "/",
   define: {
     // Polyfill for Node.js global variable (required by sockjs-client)
     global: 'globalThis',
