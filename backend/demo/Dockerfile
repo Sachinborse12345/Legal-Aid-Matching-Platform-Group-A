@@ -1,25 +1,14 @@
-# ---------- Build Stage ----------
-    FROM node:18 AS build
+FROM eclipse-temurin:17-jdk
 
-    WORKDIR /app
-    
-    # copy frontend package files
-    COPY frontend/package*.json ./
-    
-    RUN npm install
-    
-    # copy frontend source
-    COPY frontend .
-    
-    RUN npm run build
-    
-    
-    # ---------- Production Stage ----------
-    FROM nginx:alpine
-    
-    COPY --from=build /app/dist /usr/share/nginx/html
-    
-    EXPOSE 80
-    
-    CMD ["nginx", "-g", "daemon off;"]
-    
+WORKDIR /app
+
+COPY . .
+
+# Give execute permission to mvnw
+RUN chmod +x mvnw
+
+# Build project
+RUN ./mvnw clean package -DskipTests
+
+# Run jar
+CMD ["sh", "-c", "java -jar target/*.jar"]
